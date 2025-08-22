@@ -1,0 +1,27 @@
+:root {}
+
+.main {
+    display: flex;
+    flex-direction: row;
+}
+
+/* SIDEBAR */
+.sidebar {
+    max-width: 300px;
+}
+
+.sb-header {
+    display: flex;
+    flex-direction: column;
+}
+
+.sb-searchbar{
+    
+}
+
+.sb-list {}
+
+.sb-footer {}
+
+/* CONTENT */
+.content {}
