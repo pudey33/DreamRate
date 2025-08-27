@@ -93,7 +93,12 @@ CHECK (writing_rating >= 0 AND writing_rating <= 5);
 -- Add check constraint for dream content length
 ALTER TABLE dreams 
 ADD CONSTRAINT check_story_length 
-CHECK (char_length(story) >= 250 AND char_length(story) <= 25000);
+CHECK (char_length(text) >= 250 AND char_length(text) <= 25000);
+
+-- Add check constraint for review content length
+ALTER TABLE reviews
+ADD CONSTRAINT check_story_length
+CHECK (char_length(content) >= 250 AND char_length(content) <= 25000);
 
 -- =====================================================
 -- VERIFICATION QUERIES
