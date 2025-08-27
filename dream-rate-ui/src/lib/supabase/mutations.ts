@@ -1,12 +1,14 @@
 import { supabase } from './client.js'
 import type { Dream, Review } from './types.js'
 
-// Dream
-export async function createDream(story: string): Promise<Dream> {
+// Dream on, supaboi
+export async function submitDream(title: string, story: string, created_by: string): Promise<Dream> {
   const { data, error } = await supabase
     .from('dreams')
     .insert({
-      story: story
+      title: title,
+      story: story,
+      created_by: created_by
     })
     .select()
     .single()
@@ -15,10 +17,10 @@ export async function createDream(story: string): Promise<Dream> {
   return data as Dream
 }
 
-export async function updateDream(dreamId: number, story: string): Promise<Dream> {
+export async function updateDream(dreamId: number, title: string, story: string): Promise<Dream> {
   const { data, error } = await supabase
     .from('dreams')
-    .update({ story })
+    .update({ title, story })
     .eq('id', dreamId)
     .select()
     .single()
@@ -37,13 +39,13 @@ export async function deleteDream(dreamId: number): Promise<void> {
 }
 
 // Review
-export async function createReview(reviewData: {
+export async function submitReview(reviewData: {
   dream_id: number
   review: string
   overall_rating: number
-  ethics_rating: number
-  creativity_rating: number
-  writing_rating: number
+  ethics_rating: number | null
+  creativity_rating: number | null
+  writing_rating: number | null
 }): Promise<Review> {
   const { data, error } = await supabase
     .from('reviews')
@@ -60,9 +62,9 @@ export async function updateReview(
   reviewData: {
     review: string
     overall_rating: number
-    ethics_rating: number
-    creativity_rating: number
-    writing_rating: number
+    ethics_rating: number | null
+    creativity_rating: number | null
+    writing_rating: number | null
   }
 ): Promise<Review> {
   const { data, error } = await supabase

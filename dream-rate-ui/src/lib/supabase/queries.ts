@@ -13,18 +13,20 @@ export async function getUserDreams(userId: string): Promise<Dream[]> {
   return data as Dream[]
 }
 
-export async function getRandomDream(userId: string): Promise<Dream | null> {
+//This is a full sort on the dreams table. If we get a massive dataset eventually, then this should probably be a lambda function instead.
+export async function getRandomDreams(userId: string, count: number): Promise<Dream[] | null> {
   const { data, error } = await supabase
     .from('dreams')
     .select('*')
     .neq('created_by', userId)
-    .order('created_at', { ascending: false })
-    .limit(1)
+    .order('RANDOM()')
+    .limit(count)
   
   if (error) throw error
-  return data[0] as Dream | null
+  return data as Dream[]
 }
 
+// this select uses the foreign key relationship b/w dreams and reviews to get reviews in the same query
 export async function getDreamWithReviews(dreamId: number) {
   const { data, error } = await supabase
     .from('dreams')

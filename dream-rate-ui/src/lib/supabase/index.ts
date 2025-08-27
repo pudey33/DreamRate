@@ -5,7 +5,7 @@ export type { Dream, Review } from './types.js'
 // Export all queries (read operations)
 export {
   getUserDreams,
-  getRandomDream,
+  getRandomDreams,
   getDreamWithReviews,
   getReviewsForDream,
   getUserReviews
@@ -13,10 +13,10 @@ export {
 
 // Export all mutations (write operations)
 export {
-  createDream,
+  submitDream as createDream,
   updateDream,
   deleteDream,
-  createReview,
+  submitReview as createReview,
   updateReview,
   deleteReview
 } from './mutations.js'
