@@ -1,6 +1,14 @@
 import { writable } from 'svelte/store'
 import { supabase } from './supa-queries.js'
 import type { User, Session } from '@supabase/supabase-js'
+import { env } from '$env/dynamic/public'
+
+// Auth configuration
+export const authConfig = {
+  method: (env.PUBLIC_AUTH_METHOD || 'phone') as 'email' | 'phone',
+  isEmailAuth: () => authConfig.method === 'email',
+  isPhoneAuth: () => authConfig.method === 'phone'
+}
 
 // Auth stores
 export const user = writable<User | null>(null)
@@ -24,10 +32,15 @@ supabase.auth.onAuthStateChange((event, newSession) => {
 // Auth functions
 export const auth = {
   // Sign up with email and password
-  async signUp(email: string, password: string) {
+  async signUp(email: string, password: string, displayName?: string) {
     const { data, error } = await supabase.auth.signUp({
       email,
-      password
+      password,
+      options: {
+        data: {
+          display_name: displayName
+        }
+      }
     })
     if (error) throw error
     return data
@@ -38,6 +51,26 @@ export const auth = {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
+    })
+    if (error) throw error
+    return data
+  },
+
+  // Sign in with phone number (sends OTP)
+  async signInWithPhone(phone: string) {
+    const { data, error } = await supabase.auth.signInWithOtp({
+      phone: phone
+    })
+    if (error) throw error
+    return data
+  },
+
+  // Verify OTP code
+  async verifyOtp(phone: string, token: string) {
+    const { data, error } = await supabase.auth.verifyOtp({
+      phone: phone,
+      token: token,
+      type: 'sms'
     })
     if (error) throw error
     return data
