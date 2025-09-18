@@ -2,6 +2,7 @@
     import Tag from '../components/Tag.svelte';
     import DreamCard from '../components/DreamCard.svelte';
     import LoginModal from '../components/LoginModal.svelte';
+    import { user, session, auth } from '../lib/auth.ts';
     
     let showProfilePopup = false;
     let showLoginModal = false;
@@ -15,9 +16,18 @@
         showProfilePopup = false;
     }
     
-    function handleLogout() {
-        console.log('Logout clicked');
-        showProfilePopup = false;
+    async function handleLogout() {
+        try {
+            await auth.signOut();
+            showProfilePopup = false;
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+    }
+    
+    function handleLoginSuccess(event) {
+        console.log('Login successful:', event.detail);
+        // Modal will close automatically, user state will update via auth store
     }
 </script>
 
@@ -50,7 +60,7 @@
                     <div class="sb-placeholder-circle"></div>
                 </div>
                 <div class="sb-profile-name">
-                    Username
+                    {$user ? ($user.phone || $user.email || 'User') : 'Username'}
                 </div>
             </div>
             
@@ -68,9 +78,15 @@
     </div>
     <div class="content">
         <div class="content-header">
-            <button class="login-btn" on:click={() => showLoginModal = true}>
-                Login
-            </button>
+            {#if !$user}
+                <button class="login-btn" on:click={() => showLoginModal = true}>
+                    Login
+                </button>
+            {:else}
+                <div class="user-info">
+                    Welcome back, {$user.user_metadata?.display_name || 'User'}!
+                </div>
+            {/if}
         </div>
     </div>
 </div>
@@ -78,5 +94,5 @@
 <LoginModal 
     show={showLoginModal} 
     on:close={() => showLoginModal = false}
-    on:submit={(event) => console.log('Login submitted:', event.detail.phoneNumber)}
+    on:submit={handleLoginSuccess}
 />
