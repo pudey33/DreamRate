@@ -1,5 +1,6 @@
 <script lang="ts">
     import Tag from './Tag.svelte';
+    import { createEventDispatcher } from 'svelte';
     
     interface DreamData {
         title: string;
@@ -10,6 +11,15 @@
     }
     
     export let dream: DreamData | null = null;
+    export let canGoNext: boolean = false;
+    export let canGoPrevious: boolean = false;
+    export let currentIndex: number = 0;
+    export let totalCount: number = 0;
+    
+    const dispatch = createEventDispatcher();
+    
+    let isEditingRating = false;
+    let tempRating = 0;
     
     // Function to format date nicely
     function formatDate(dateString: string): string {
@@ -42,10 +52,66 @@
         
         return stars.join('');
     }
+    
+    // Navigation functions
+    function handleNext() {
+        dispatch('next');
+    }
+    
+    function handlePrevious() {
+        dispatch('previous');
+    }
+    
+    // Rating functions
+    function startEditingRating() {
+        if (dream) {
+            isEditingRating = true;
+            tempRating = dream.rating;
+        }
+    }
+    
+    function cancelEditingRating() {
+        isEditingRating = false;
+        tempRating = 0;
+    }
+    
+    function saveRating() {
+        if (tempRating >= 1 && tempRating <= 5) {
+            dispatch('rateChange', tempRating);
+            isEditingRating = false;
+        }
+    }
+    
+    function setTempRating(rating: number) {
+        tempRating = rating;
+    }
 </script>
 
 {#if dream}
     <div class="dream-view">
+        <!-- Navigation Controls -->
+        {#if totalCount > 1}
+            <div class="navigation-controls">
+                <button 
+                    class="nav-btn" 
+                    class:disabled={!canGoPrevious}
+                    on:click={handlePrevious}
+                    disabled={!canGoPrevious}
+                >
+                    ← Previous
+                </button>
+                <span class="dream-counter">{currentIndex} of {totalCount}</span>
+                <button 
+                    class="nav-btn" 
+                    class:disabled={!canGoNext}
+                    on:click={handleNext}
+                    disabled={!canGoNext}
+                >
+                    Next →
+                </button>
+            </div>
+        {/if}
+        
         <div class="dream-header">
             <h1 class="dream-title">{dream.title}</h1>
             <div class="dream-meta">
@@ -53,8 +119,31 @@
                     {formatDate(dream.date)}
                 </div>
                 <div class="dream-rating">
-                    <span class="stars">{getStarRating(dream.rating)}</span>
-                    <span class="rating-text">{dream.rating}/5</span>
+                    {#if isEditingRating}
+                        <div class="rating-editor">
+                            <div class="star-selector">
+                                {#each [1, 2, 3, 4, 5] as star}
+                                    <button 
+                                        class="star-btn"
+                                        class:active={star <= tempRating}
+                                        on:click={() => setTempRating(star)}
+                                    >
+                                        ★
+                                    </button>
+                                {/each}
+                            </div>
+                            <div class="rating-actions">
+                                <button class="rating-save" on:click={saveRating}>Save</button>
+                                <button class="rating-cancel" on:click={cancelEditingRating}>Cancel</button>
+                            </div>
+                        </div>
+                    {:else}
+                        <div class="rating-display" on:click={startEditingRating}>
+                            <span class="stars">{getStarRating(dream.rating)}</span>
+                            <span class="rating-text">{dream.rating}/5</span>
+                            <span class="rating-edit-hint">Click to edit</span>
+                        </div>
+                    {/if}
                 </div>
             </div>
         </div>
@@ -93,6 +182,148 @@
         margin: 0 auto;
         height: 100%;
         overflow-y: auto;
+    }
+    
+    /* Navigation Controls */
+    .navigation-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: calc(var(--spacing) * 2);
+        padding: var(--spacing);
+        background: var(--bg-secondary);
+        border-radius: var(--rad);
+        border: 1px solid var(--border-color);
+    }
+    
+    .nav-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: calc(var(--spacing) * 1.5) calc(var(--spacing) * 2);
+        border-radius: var(--rad);
+        font-size: var(--normal);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-width: 120px;
+    }
+    
+    .nav-btn:hover:not(.disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .nav-btn.disabled {
+        background: var(--bg-tertiary);
+        color: var(--text-muted);
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+    
+    .dream-counter {
+        font-size: var(--larger);
+        font-weight: 600;
+        color: var(--text-primary);
+        background: var(--bg-tertiary);
+        padding: calc(var(--spacing) / 2) var(--spacing);
+        border-radius: var(--rad);
+        border: 1px solid var(--border-color);
+    }
+    
+    /* Rating Controls */
+    .rating-display {
+        cursor: pointer;
+        padding: calc(var(--spacing) / 2);
+        border-radius: var(--rad);
+        transition: background-color 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: calc(var(--spacing) / 2);
+    }
+    
+    .rating-display:hover {
+        background: var(--bg-tertiary);
+    }
+    
+    .rating-edit-hint {
+        font-size: var(--smaller);
+        color: var(--text-muted);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+    
+    .rating-display:hover .rating-edit-hint {
+        opacity: 1;
+    }
+    
+    .rating-editor {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing);
+        background: var(--bg-tertiary);
+        padding: var(--spacing);
+        border-radius: var(--rad);
+        border: 1px solid var(--border-color);
+    }
+    
+    .star-selector {
+        display: flex;
+        gap: calc(var(--spacing) / 4);
+    }
+    
+    .star-btn {
+        background: none;
+        border: none;
+        font-size: var(--x-larger);
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        padding: calc(var(--spacing) / 4);
+        border-radius: var(--rad);
+    }
+    
+    .star-btn:hover,
+    .star-btn.active {
+        color: #ffd700;
+        transform: scale(1.1);
+    }
+    
+    .rating-actions {
+        display: flex;
+        gap: calc(var(--spacing) / 2);
+    }
+    
+    .rating-save,
+    .rating-cancel {
+        padding: calc(var(--spacing) / 2) var(--spacing);
+        border: none;
+        border-radius: var(--rad);
+        font-size: var(--smaller);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .rating-save {
+        background: #28a745;
+        color: white;
+    }
+    
+    .rating-save:hover {
+        background: #218838;
+        transform: translateY(-1px);
+    }
+    
+    .rating-cancel {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+    }
+    
+    .rating-cancel:hover {
+        background: var(--bg-primary);
+        transform: translateY(-1px);
     }
     
     .dream-header {

@@ -8,6 +8,7 @@
     let showProfilePopup = false;
     let showLoginModal = false;
     let selectedDream: any = null;
+    let currentDreamIndex = -1; // Track which dream is currently selected
     
     // Sample dreams data
     const dreams = [
@@ -69,6 +70,31 @@
     
     function handleDreamSelect(event: any) {
         selectedDream = event.detail;
+        // Find the index of the selected dream
+        currentDreamIndex = dreams.findIndex(dream => 
+            dream.title === event.detail.title && dream.date === event.detail.date
+        );
+    }
+    
+    function goToNextDream() {
+        if (currentDreamIndex < dreams.length - 1) {
+            currentDreamIndex++;
+            selectedDream = dreams[currentDreamIndex];
+        }
+    }
+    
+    function goToPreviousDream() {
+        if (currentDreamIndex > 0) {
+            currentDreamIndex--;
+            selectedDream = dreams[currentDreamIndex];
+        }
+    }
+    
+    function updateDreamRating(newRating: number) {
+        if (currentDreamIndex >= 0 && currentDreamIndex < dreams.length) {
+            dreams[currentDreamIndex].rating = newRating;
+            selectedDream = { ...dreams[currentDreamIndex] }; // Trigger reactivity
+        }
     }
 </script>
 
@@ -128,7 +154,16 @@
             {/if}
         </div>
         <div class="content-main">
-            <DreamView dream={selectedDream} />
+            <DreamView 
+                dream={selectedDream} 
+                canGoNext={currentDreamIndex < dreams.length - 1}
+                canGoPrevious={currentDreamIndex > 0}
+                currentIndex={currentDreamIndex + 1}
+                totalCount={dreams.length}
+                on:next={goToNextDream}
+                on:previous={goToPreviousDream}
+                on:rateChange={(event) => updateDreamRating(event.detail)}
+            />
         </div>
     </div>
 </div>
