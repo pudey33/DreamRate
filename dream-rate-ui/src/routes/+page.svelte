@@ -1,5 +1,4 @@
 <script lang="ts">
-<script lang="ts">
     import Tag from '../components/Tag.svelte';
     import DreamCard from '../components/DreamCard.svelte';
     import DreamView from '../components/DreamView.svelte';
@@ -108,16 +107,6 @@
         </div>
         <div class="sb-list">
             <div class="dream-card">
-                {#each dreams as dream}
-                    <DreamCard 
-                        title={dream.title} 
-                        date={dream.date} 
-                        rating={dream.rating} 
-                        tags={dream.tags}
-                        text={dream.text}
-                        on:select={handleDreamSelect}
-                    />
-                {/each}
                 {#each dreams as dream}
                     <DreamCard 
                         title={dream.title} 
