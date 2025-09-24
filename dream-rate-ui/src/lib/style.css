@@ -250,4 +250,15 @@ body {
     transform: translateY(0);
 }
 
+.user-info {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 8px 16px;
+    border-radius: var(--rad);
+    font-size: var(--normal);
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 /* MAIN PAGE CONTENT */
