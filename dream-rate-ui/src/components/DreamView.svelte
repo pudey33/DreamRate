@@ -133,7 +133,7 @@
                                 {/each}
                             </div>
                             <div class="rating-actions">
-                                <button class="rating-save" on:click={saveRating}>Save</button>
+                                <button class="rating-save" on:click={saveRating}>Submit</button>
                                 <button class="rating-cancel" on:click={cancelEditingRating}>Cancel</button>
                             </div>
                         </div>
@@ -141,7 +141,7 @@
                         <div class="rating-display" on:click={startEditingRating}>
                             <span class="stars">{getStarRating(dream.rating)}</span>
                             <span class="rating-text">{dream.rating}/5</span>
-                            <span class="rating-edit-hint">Click to edit</span>
+                            <span class="rating-edit-hint">Click to rate</span>
                         </div>
                     {/if}
                 </div>
@@ -155,7 +155,6 @@
         </div>
         
         <div class="dream-content">
-            <h3>Dream Description</h3>
             <p class="dream-text">{dream.text}</p>
         </div>
         
