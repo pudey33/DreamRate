@@ -258,10 +258,6 @@
                             <div class="dream-item">
                                 <DreamView 
                                     dream={dream}
-                                    canGoNext={false}
-                                    canGoPrevious={false}
-                                    currentIndex={index + 1}
-                                    totalCount={transformedDreams.length}
                                 />
                             </div>
                         {/each}

@@ -1,34 +1,30 @@
 # Active Context
 
 ## Current Work Focus
-✅ **COMPLETED**: Successfully integrated Supabase dream data into the DreamRate landing page.
+✅ **COMPLETED**: Successfully removed navigation controls from DreamView components for the scrollable feed layout.
 
-## Final Implementation
-The landing page now:
-1. Fetches 10 random dreams from Supabase when user is authenticated
-2. Displays them as a scrollable feed in the main content area using DreamView components
-3. Handles all authentication states (logged out, loading, error, empty, success)
-4. Preserves sidebar with sample dreams (click functionality disabled as requested)
+## Recent Changes
+Streamlined the DreamView component by removing all navigation-related functionality:
 
-## Key Issue Resolved
-**Database Schema Mismatch**: The critical issue was that we were mapping `dream.story` when the actual database field is `dream.content`. This has been fixed in:
-- `Dream` TypeScript interface (updated to use `content` field)
-- Data transformation function (now correctly maps `dream.content` → `text`)
+1. **Removed Navigation Props**: Eliminated `canGoNext`, `canGoPrevious`, `currentIndex`, and `totalCount` props
+2. **Removed Navigation Functions**: Deleted `handleNext()` and `handlePrevious()` event handlers
+3. **Removed Navigation HTML**: Eliminated the entire navigation controls section (Previous/Next buttons and "x of x" counter)
+4. **Cleaned Up CSS**: Removed all navigation-related styling (`.navigation-controls`, `.nav-btn`, `.dream-counter`)
+5. **Updated Landing Page**: Simplified DreamView component usage to only pass the `dream` prop
 
-## Technical Implementation Details
-- **Query Fix**: Resolved `RANDOM()` syntax error with client-side randomization
-- **Data Transformation**: 
-  - `content` → `text` (fixed field mapping)
-  - `created_at` → formatted date
-  - `tags` JSONB → colored tag objects
-  - `rating` set to 0 (placeholder for unreviewed dreams)
-- **Layout**: Scrollable DreamView list in main content, sidebar preserved
-- **Error Handling**: Comprehensive states for all scenarios
+## Technical Implementation
+- **Simplified Component Interface**: DreamView now only requires the `dream` prop
+- **Cleaner Layout**: Each dream is self-contained without navigation clutter
+- **Better UX**: Perfect for scrollable feed where users scroll through dreams naturally
+- **Maintained Functionality**: Rating system and action buttons remain intact
 
 ## Current Status
-🎯 **INTEGRATION COMPLETE** - The DreamRate landing page now successfully displays real dream content from Supabase in a scrollable feed format as requested.
+🎯 **NAVIGATION REMOVAL COMPLETE** - The DreamView component is now streamlined for the scrollable feed layout. Each dream displays independently without navigation controls, creating a clean social media-style feed experience.
 
-## Next Steps (Future Enhancements)
-- Implement infinite scroll for loading more dreams
-- Add dream rating/review functionality
-- Enhance search and filtering capabilities
+## Benefits Achieved
+- **Cleaner Interface**: No confusing navigation controls in a scroll-based layout
+- **Better Performance**: Reduced component complexity and prop passing
+- **Improved UX**: Natural scrolling behavior without navigation distractions
+- **Simplified Code**: Easier to maintain and understand component structure
+
+The DreamRate app now has a modern, streamlined feed layout perfect for browsing community dreams!
