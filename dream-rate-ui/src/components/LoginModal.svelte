@@ -109,7 +109,12 @@
 </script>
 
 {#if show}
-    <div class="modal-overlay" on:click={handleModalClick}>
+    <div class="modal-overlay" 
+         on:click={handleModalClick}
+         on:keydown={(e) => e.key === 'Escape' && closeModal()}
+         role="dialog"
+         aria-modal="true"
+         tabindex="-1">
         <div class="modal-content">
             <button class="close-btn" on:click={closeModal}>×</button>
             

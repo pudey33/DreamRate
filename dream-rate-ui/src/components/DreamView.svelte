@@ -11,10 +11,6 @@
     }
     
     export let dream: DreamData | null = null;
-    export let canGoNext: boolean = false;
-    export let canGoPrevious: boolean = false;
-    export let currentIndex: number = 0;
-    export let totalCount: number = 0;
     
     const dispatch = createEventDispatcher();
     
@@ -53,15 +49,6 @@
         return stars.join('');
     }
     
-    // Navigation functions
-    function handleNext() {
-        dispatch('next');
-    }
-    
-    function handlePrevious() {
-        dispatch('previous');
-    }
-    
     // Rating functions
     function startEditingRating() {
         if (dream) {
@@ -89,29 +76,6 @@
 
 {#if dream}
     <div class="dream-view">
-        <!-- Navigation Controls -->
-        {#if totalCount > 1}
-            <div class="navigation-controls">
-                <button 
-                    class="nav-btn" 
-                    class:disabled={!canGoPrevious}
-                    on:click={handlePrevious}
-                    disabled={!canGoPrevious}
-                >
-                    ← Previous
-                </button>
-                <span class="dream-counter">{currentIndex} of {totalCount}</span>
-                <button 
-                    class="nav-btn" 
-                    class:disabled={!canGoNext}
-                    on:click={handleNext}
-                    disabled={!canGoNext}
-                >
-                    Next →
-                </button>
-            </div>
-        {/if}
-        
         <div class="dream-header">
             <h1 class="dream-title">{dream.title}</h1>
             <div class="dream-meta">
@@ -138,7 +102,11 @@
                             </div>
                         </div>
                     {:else}
-                        <div class="rating-display" on:click={startEditingRating}>
+                        <div class="rating-display" 
+                             on:click={startEditingRating}
+                             on:keydown={(e) => e.key === 'Enter' && startEditingRating()}
+                             role="button"
+                             tabindex="0">
                             <span class="stars">{getStarRating(dream.rating)}</span>
                             <span class="rating-text">{dream.rating}/5</span>
                             <span class="rating-edit-hint">Click to rate</span>
@@ -181,53 +149,6 @@
         margin: 0 auto;
         height: 100%;
         overflow-y: auto;
-    }
-    
-    /* Navigation Controls */
-    .navigation-controls {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: calc(var(--spacing) * 2);
-        padding: var(--spacing);
-        background: var(--bg-secondary);
-        border-radius: var(--rad);
-        border: 1px solid var(--border-color);
-    }
-    
-    .nav-btn {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        padding: calc(var(--spacing) * 1.5) calc(var(--spacing) * 2);
-        border-radius: var(--rad);
-        font-size: var(--normal);
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        min-width: 120px;
-    }
-    
-    .nav-btn:hover:not(.disabled) {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-    }
-    
-    .nav-btn.disabled {
-        background: var(--bg-tertiary);
-        color: var(--text-muted);
-        cursor: not-allowed;
-        opacity: 0.5;
-    }
-    
-    .dream-counter {
-        font-size: var(--larger);
-        font-weight: 600;
-        color: var(--text-primary);
-        background: var(--bg-tertiary);
-        padding: calc(var(--spacing) / 2) var(--spacing);
-        border-radius: var(--rad);
-        border: 1px solid var(--border-color);
     }
     
     /* Rating Controls */
@@ -380,13 +301,6 @@
     
     .dream-content {
         margin-bottom: calc(var(--spacing) * 3);
-    }
-    
-    .dream-content h3 {
-        font-size: var(--x-larger);
-        color: var(--text-primary);
-        margin: 0 0 var(--spacing) 0;
-        font-weight: 600;
     }
     
     .dream-text {

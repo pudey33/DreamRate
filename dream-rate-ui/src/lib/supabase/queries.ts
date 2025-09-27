@@ -15,14 +15,22 @@ export async function getUserDreams(userId: string): Promise<Dream[]> {
 
 //This is a full sort on the dreams table. If we get a massive dataset eventually, then this should probably be a lambda function instead.
 export async function getRandomDreams(userId: string, count: number): Promise<Dream[] | null> {
+  // Use a workaround for random ordering since RANDOM() isn't supported in .order()
+  // We'll fetch more records and randomize client-side for now
   const { data, error } = await supabase
     .from('dreams')
     .select('*')
     .neq('created_by', userId)
-    .order('RANDOM()')
-    .limit(count)
+    .limit(count * 3) // Fetch more records to randomize from
   
   if (error) throw error
+  
+  // Randomize the results client-side and return the requested count
+  if (data && data.length > 0) {
+    const shuffled = data.sort(() => Math.random() - 0.5)
+    return shuffled.slice(0, count) as Dream[]
+  }
+  
   return data as Dream[]
 }
 

@@ -4,7 +4,8 @@ export interface Dream {
   created_at: string
   created_by: string
   title: string
-  story: string
+  content: string // Changed from 'story' to 'content' to match database schema
+  tags?: string[] | null // JSONB tags column
 }
 
 export interface Review {
