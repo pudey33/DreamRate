@@ -112,7 +112,8 @@
             date: formattedDate,
             rating: 0, // Placeholder since dreams are unreviewed
             tags: tags,
-            text: dream.content || 'No content available' // Use 'content' field from database
+            text: dream.content || 'No content available', // Use 'content' field from database
+            created_by: dream.created_by
         };
     }
     
@@ -273,6 +274,7 @@
                             <div class="dream-item">
                                 <DreamView 
                                     dream={dream}
+                                    currentUserId={$user?.id}
                                 />
                             </div>
                         {/each}
