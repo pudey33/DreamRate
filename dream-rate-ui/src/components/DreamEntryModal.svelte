@@ -70,9 +70,35 @@
             // Close modal and notify parent
             show = false;
             dispatch('success');
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error submitting dream:', err);
-            error = 'Failed to submit dream. Please try again.';
+            
+            // Handle specific server validation errors
+            if (err?.message) {
+                const errorMessage = err.message.toLowerCase();
+                
+                if (errorMessage.includes('check_story_length') || errorMessage.includes('story_length')) {
+                    error = 'Your dream content is too short. Please add more details to share your dream experience (minimum 50 characters required).';
+                } else if (errorMessage.includes('too short') || errorMessage.includes('minimum length') || errorMessage.includes('content_length')) {
+                    error = 'Your dream content is too short. Please add more details to share your dream experience.';
+                } else if (errorMessage.includes('title') && (errorMessage.includes('too short') || errorMessage.includes('required'))) {
+                    error = 'Dream title is required and must be at least a few characters long.';
+                } else if (errorMessage.includes('duplicate') || errorMessage.includes('unique')) {
+                    error = 'A dream with this title already exists. Please choose a different title.';
+                } else if (errorMessage.includes('rate limit') || errorMessage.includes('too many')) {
+                    error = 'You\'re sharing dreams too quickly. Please wait a moment before sharing another dream.';
+                } else if (errorMessage.includes('permission') || errorMessage.includes('unauthorized')) {
+                    error = 'You don\'t have permission to share dreams. Please try logging in again.';
+                } else if (errorMessage.includes('check constraint') || errorMessage.includes('violates')) {
+                    error = 'Your dream doesn\'t meet the required format. Please check that your title and content are properly filled out.';
+                } else {
+                    // Generic error message for other server errors
+                    error = `Failed to submit dream: ${err.message}`;
+                }
+            } else {
+                // Fallback for unknown errors
+                error = 'Failed to submit dream. Please check your connection and try again.';
+            }
         } finally {
             loading = false;
         }
@@ -96,7 +122,7 @@
 
 {#if show}
     <div class="modal-overlay" on:click={handleClose} on:keydown={handleKeydown} role="dialog" aria-modal="true" tabindex="-1">
-        <div class="modal-content" role="document">
+        <div class="modal-content" on:click|stopPropagation role="document">
             <div class="modal-header">
                 <h2>Share Your Dream</h2>
                 <button class="close-btn" on:click={handleClose} disabled={loading}>×</button>

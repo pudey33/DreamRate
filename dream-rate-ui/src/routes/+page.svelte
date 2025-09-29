@@ -3,6 +3,7 @@
     import LoginModal from '../components/LoginModal.svelte';
     import DreamEntryModal from '../components/DreamEntryModal.svelte';
     import Sidebar from '../components/Sidebar.svelte';
+    import Toast from '../components/Toast.svelte';
     import { user, auth } from '../lib/auth';
     import { getRandomDreams } from '../lib/supabase/queries';
     import type { Dream } from '../lib/supabase/types';
@@ -11,6 +12,11 @@
     let showDreamEntryModal = false;
     let selectedDream: any = null;
     let sidebarRef: any; // Reference to sidebar component
+    
+    // Toast state
+    let showToast = false;
+    let toastMessage = '';
+    let toastType: 'success' | 'error' | 'info' = 'success';
     
     // Supabase dreams data
     let supabaseDreams: Dream[] = [];
@@ -46,6 +52,25 @@
         if (sidebarRef) {
             sidebarRef.refreshUserDreams();
         }
+        // Show success toast
+        showSuccessToast('Dream shared successfully! 🌟');
+    }
+    
+    // Toast helper functions
+    function showSuccessToast(message: string) {
+        toastMessage = message;
+        toastType = 'success';
+        showToast = true;
+    }
+    
+    function showErrorToast(message: string) {
+        toastMessage = message;
+        toastType = 'error';
+        showToast = true;
+    }
+    
+    function handleToastDismiss() {
+        showToast = false;
     }
     
     // Transform Supabase Dream to DreamView format
@@ -205,6 +230,13 @@
     show={showDreamEntryModal} 
     on:close={() => showDreamEntryModal = false}
     on:success={handleDreamEntrySuccess}
+/>
+
+<Toast 
+    bind:show={showToast}
+    message={toastMessage}
+    type={toastType}
+    on:dismiss={handleToastDismiss}
 />
 
 <style>
