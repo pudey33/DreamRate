@@ -19,9 +19,16 @@
             date
         });
     }
+    
+    function handleKeydown(event: KeyboardEvent) {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            handleClick();
+        }
+    }
 </script>
 
-<div class="dream-card" on:click={handleClick}>
+<div class="dream-card" on:click={handleClick} on:keydown={handleKeydown} role="button" tabindex="0" aria-label="Dream: {title}">
     <div class="dc-header">
         <div class="dc-title">
             {title}

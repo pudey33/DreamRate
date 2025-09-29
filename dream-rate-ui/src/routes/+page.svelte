@@ -5,6 +5,9 @@
     import LoginModal from '../components/LoginModal.svelte';
     import DreamEntryModal from '../components/DreamEntryModal.svelte';
     import { user, session, auth } from '../lib/auth';
+    import { getRandomDreams } from '../lib/supabase/queries';
+    import type { Dream } from '../lib/supabase/types';
+    import { onMount } from 'svelte';
     
     let showProfilePopup = false;
     let showLoginModal = false;
@@ -12,8 +15,14 @@
     let selectedDream: any = null;
     let currentDreamIndex = -1; // Track which dream is currently selected
     
-    // Sample dreams data
-    const dreams = [
+    // Supabase dreams data
+    let supabaseDreams: Dream[] = [];
+    let transformedDreams: any[] = [];
+    let loading = false;
+    let error: string | null = null;
+    
+    // Sample dreams data for sidebar
+    const sidebarDreams = [
         {
             title: "The Haunted Castle",
             date: "Dec 15, 2024",
@@ -135,32 +144,20 @@
     
     // Sidebar dream selection (removed functionality as requested)
     function handleDreamSelect(event: any) {
-        selectedDream = event.detail;
-        // Find the index of the selected dream
-        currentDreamIndex = dreams.findIndex(dream => 
-            dream.title === event.detail.title && dream.date === event.detail.date
-        );
+        // Functionality removed as requested
+        console.log('Sidebar dream selection disabled');
     }
     
     function goToNextDream() {
-        if (currentDreamIndex < dreams.length - 1) {
-            currentDreamIndex++;
-            selectedDream = dreams[currentDreamIndex];
-        }
+        // This will be handled by individual DreamView components
     }
     
     function goToPreviousDream() {
-        if (currentDreamIndex > 0) {
-            currentDreamIndex--;
-            selectedDream = dreams[currentDreamIndex];
-        }
+        // This will be handled by individual DreamView components
     }
     
     function updateDreamRating(newRating: number) {
-        if (currentDreamIndex >= 0 && currentDreamIndex < dreams.length) {
-            dreams[currentDreamIndex].rating = newRating;
-            selectedDream = { ...dreams[currentDreamIndex] }; // Trigger reactivity
-        }
+        // This will be handled by individual DreamView components
     }
 </script>
 
@@ -187,7 +184,7 @@
         </div>
         <div class="sb-list">
             <div class="dream-card">
-                {#each dreams as dream}
+                {#each sidebarDreams as dream}
                     <DreamCard 
                         title={dream.title} 
                         date={dream.date} 
@@ -200,7 +197,11 @@
             </div>
         </div>
         <div class="sb-footer">
-            <div class="sb-profile-container" on:click={toggleProfilePopup}>
+            <div class="sb-profile-container" 
+                 on:click={toggleProfilePopup}
+                 on:keydown={(e) => e.key === 'Enter' && toggleProfilePopup()}
+                 role="button"
+                 tabindex="0">
                 <div class="sb-profile-icon">
                     <div class="sb-placeholder-circle"></div>
                 </div>
@@ -227,23 +228,57 @@
                 <button class="login-btn" on:click={() => showLoginModal = true}>
                     Login
                 </button>
-            {:else}
-                <div class="user-info">
-                    Welcome back, {$user.user_metadata?.display_name || 'User'}!
-                </div>
             {/if}
         </div>
         <div class="content-main">
-            <DreamView 
-                dream={selectedDream} 
-                canGoNext={currentDreamIndex < dreams.length - 1}
-                canGoPrevious={currentDreamIndex > 0}
-                currentIndex={currentDreamIndex + 1}
-                totalCount={dreams.length}
-                on:next={goToNextDream}
-                on:previous={goToPreviousDream}
-                on:rateChange={(event) => updateDreamRating(event.detail)}
-            />
+            {#if !$user}
+                <div class="login-prompt">
+                    <div class="prompt-content">
+                        <div class="prompt-icon">🌙</div>
+                        <h2>Welcome to DreamRate</h2>
+                        <p>Login to discover amazing dreams from our community!</p>
+                        <button class="prompt-login-btn" on:click={() => showLoginModal = true}>
+                            Get Started
+                        </button>
+                    </div>
+                </div>
+            {:else if loading}
+                <div class="loading-state">
+                    <div class="loading-spinner"></div>
+                    <p>Loading dreams...</p>
+                </div>
+            {:else if error}
+                <div class="error-state">
+                    <div class="error-icon">⚠️</div>
+                    <h3>Oops! Something went wrong</h3>
+                    <p>{error}</p>
+                    <button class="retry-btn" on:click={fetchRandomDreams}>
+                        Try Again
+                    </button>
+                </div>
+            {:else if transformedDreams.length === 0}
+                <div class="empty-state">
+                    <div class="empty-icon">💭</div>
+                    <h3>No dreams found</h3>
+                    <p>Be the first to share a dream with the community!</p>
+                </div>
+            {:else}
+                <div class="dreams-feed">
+                    <div class="feed-header">
+                        <h2>Dream Rater</h2>
+                        <p>The dankest dreams. The dankest community.</p>
+                    </div>
+                    <div class="dreams-list">
+                        {#each transformedDreams as dream, index}
+                            <div class="dream-item">
+                                <DreamView 
+                                    dream={dream}
+                                />
+                            </div>
+                        {/each}
+                    </div>
+                </div>
+            {/if}
         </div>
     </div>
 </div>
@@ -281,7 +316,7 @@
 
     /* Share dream button styles */
     .share-dream-btn {
-        width: 100%;
+        width: calc(100% - calc(var(--spacing) * 2));
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         border: none;
@@ -297,6 +332,7 @@
         gap: calc(var(--spacing) * 0.5);
         margin: var(--spacing);
         box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        text-align: center;
     }
     
     .share-dream-btn:hover {
@@ -305,7 +341,11 @@
     }
     
     .btn-icon {
-        font-size: var(--larger);
+        font-size: var(--normal);
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
     
     .sb-searchbar input:disabled {

@@ -15,7 +15,7 @@
     let error = '';
     
     function addTag() {
-        const trimmedTag = tagInput.trim();
+        const trimmedTag = tagInput.trim().toLowerCase();
         if (trimmedTag && !tags.includes(trimmedTag) && tags.length < 5) {
             tags = [...tags, trimmedTag];
             tagInput = '';
@@ -31,6 +31,17 @@
             event.preventDefault();
             addTag();
         }
+        // Prevent spaces, commas, and periods
+        if (event.key === ' ' || event.key === ',' || event.key === '.') {
+            event.preventDefault();
+        }
+    }
+    
+    function handleTagInput(event: Event) {
+        const target = event.target as HTMLInputElement;
+        // Remove any spaces, commas, or periods that might have been pasted
+        target.value = target.value.replace(/[ ,.]/g, '');
+        tagInput = target.value;
     }
     
     async function handleSubmit() {
@@ -84,8 +95,8 @@
 <svelte:window on:keydown={handleKeydown} />
 
 {#if show}
-    <div class="modal-overlay" on:click={handleClose}>
-        <div class="modal-content" on:click|stopPropagation>
+    <div class="modal-overlay" on:click={handleClose} on:keydown={handleKeydown} role="dialog" aria-modal="true" tabindex="-1">
+        <div class="modal-content" role="document">
             <div class="modal-header">
                 <h2>Share Your Dream</h2>
                 <button class="close-btn" on:click={handleClose} disabled={loading}>×</button>
@@ -127,6 +138,7 @@
                             type="text"
                             bind:value={tagInput}
                             on:keydown={handleTagKeydown}
+                            on:input={handleTagInput}
                             placeholder="Add a tag and press Enter..."
                             maxlength="20"
                             disabled={loading || tags.length >= 5}
@@ -157,7 +169,7 @@
                         </div>
                     {/if}
                     
-                    <div class="tag-hint">Maximum 5 tags, 20 characters each</div>
+                    <div class="tag-hint">Maximum 5 tags, 20 characters each (no spaces, commas, or periods)</div>
                 </div>
                 
                 {#if error}
