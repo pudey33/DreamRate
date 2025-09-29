@@ -3,14 +3,17 @@
     import { createEventDispatcher } from 'svelte';
     
     interface DreamData {
+        id?: number;
         title: string;
         date: string;
         rating: number;
         tags: Array<{ color: string; text: string }>;
         text: string;
+        created_by?: string;
     }
     
     export let dream: DreamData | null = null;
+    export let currentUserId: string | null = null;
     
     const dispatch = createEventDispatcher();
     
@@ -72,6 +75,9 @@
     function setTempRating(rating: number) {
         tempRating = rating;
     }
+    
+    // Check if current user is the creator of this dream
+    $: isOwner = currentUserId && dream?.created_by && currentUserId === dream.created_by;
 </script>
 
 {#if dream}
@@ -127,9 +133,13 @@
         </div>
         
         <div class="dream-actions">
-            <button class="action-btn primary">Edit Dream</button>
+            {#if isOwner}
+                <button class="action-btn primary">Edit Dream</button>
+            {/if}
             <button class="action-btn secondary">Share</button>
-            <button class="action-btn danger">Delete</button>
+            {#if isOwner}
+                <button class="action-btn danger">Delete</button>
+            {/if}
         </div>
     </div>
 {:else}
