@@ -1,17 +1,22 @@
 <script lang="ts">
-    import Tag from '../components/Tag.svelte';
-    import DreamCard from '../components/DreamCard.svelte';
     import DreamView from '../components/DreamView.svelte';
     import LoginModal from '../components/LoginModal.svelte';
-    import { user, session, auth } from '../lib/auth';
+    import DreamEntryModal from '../components/DreamEntryModal.svelte';
+    import Sidebar from '../components/Sidebar.svelte';
+    import Toast from '../components/Toast.svelte';
+    import { user, auth } from '../lib/auth';
     import { getRandomDreams } from '../lib/supabase/queries';
     import type { Dream } from '../lib/supabase/types';
-    import { onMount } from 'svelte';
     
-    let showProfilePopup = false;
     let showLoginModal = false;
+    let showDreamEntryModal = false;
     let selectedDream: any = null;
-    let currentDreamIndex = -1; // Track which dream is currently selected
+    let sidebarRef: any; // Reference to sidebar component
+    
+    // Toast state
+    let showToast = false;
+    let toastMessage = '';
+    let toastType: 'success' | 'error' | 'info' = 'success';
     
     // Supabase dreams data
     let supabaseDreams: Dream[] = [];
@@ -19,62 +24,53 @@
     let loading = false;
     let error: string | null = null;
     
-    // Sample dreams data for sidebar
-    const sidebarDreams = [
-        {
-            title: "The Haunted Castle",
-            date: "Dec 15, 2024",
-            rating: 4,
-            tags: [
-                { color: "#ff6b6b", text: "Scary" },
-                { color: "#45b7d1", text: "Adventure" }
-            ],
-            text: "I was exploring an ancient castle with hidden passages. Every door I opened led to a new mysterious room filled with glowing artifacts. The atmosphere was eerie but exciting as I discovered secret treasures."
-        },
-        {
-            title: "Flying Through Rainbow Bridges",
-            date: "Dec 12, 2024",
-            rating: 5,
-            tags: [
-                { color: "#96ceb4", text: "Flying" },
-                { color: "#feca57", text: "Lucid" },
-                { color: "#ff9ff3", text: "Beautiful" }
-            ],
-            text: "I realized I was dreaming and took control! I soared above a breathtaking landscape of floating islands connected by rainbow bridges. The feeling of freedom was incredible as I danced through the clouds."
-        },
-        {
-            title: "The Endless Maze",
-            date: "Dec 10, 2024",
-            rating: 2,
-            tags: [
-                { color: "#ff6b6b", text: "Nightmare" },
-                { color: "#666666", text: "Chase" }
-            ],
-            text: "I was being chased through endless dark corridors by something I couldn't see. Every time I thought I found an exit, it led to another maze. My heart was pounding even after I woke up."
-        }
-    ];
-    
-    function toggleProfilePopup() {
-        showProfilePopup = !showProfilePopup;
+    // Sidebar event handlers
+    function handleSidebarLogout() {
+        auth.signOut();
     }
     
-    function handleSettings() {
-        console.log('Settings clicked');
-        showProfilePopup = false;
+    function handleSidebarShowDreamEntry() {
+        showDreamEntryModal = true;
     }
     
-    async function handleLogout() {
-        try {
-            await auth.signOut();
-            showProfilePopup = false;
-        } catch (error) {
-            console.error('Logout error:', error);
-        }
+    function handleSidebarDreamSelect(event: any) {
+        selectedDream = event.detail;
+        console.log('Dream selected for editing:', selectedDream);
+        // TODO: Implement dream editing functionality
     }
     
     function handleLoginSuccess(event: any) {
         console.log('Login successful:', event.detail);
         // Modal will close automatically, user state will update via auth store
+    }
+    
+    function handleDreamEntrySuccess() {
+        console.log('Dream submitted successfully');
+        // Refresh the dreams feed to potentially show the new dream
+        fetchRandomDreams();
+        // Refresh the sidebar's user dreams
+        if (sidebarRef) {
+            sidebarRef.refreshUserDreams();
+        }
+        // Show success toast
+        showSuccessToast('Dream shared successfully! 🌟');
+    }
+    
+    // Toast helper functions
+    function showSuccessToast(message: string) {
+        toastMessage = message;
+        toastType = 'success';
+        showToast = true;
+    }
+    
+    function showErrorToast(message: string) {
+        toastMessage = message;
+        toastType = 'error';
+        showToast = true;
+    }
+    
+    function handleToastDismiss() {
+        showToast = false;
     }
     
     // Transform Supabase Dream to DreamView format
@@ -104,7 +100,8 @@
             date: formattedDate,
             rating: 0, // Placeholder since dreams are unreviewed
             tags: tags,
-            text: dream.content || 'No content available' // Use 'content' field from database
+            text: dream.content || 'No content available', // Use 'content' field from database
+            created_by: dream.created_by
         };
     }
     
@@ -154,59 +151,13 @@
 </script>
 
 <div class="page-container">
-    <div class="sidebar">
-        {#if $user}
-            <div class="sb-welcome">
-                <div class="welcome-message">
-                    Welcome back, {$user.user_metadata?.display_name || 'User'}!
-                </div>
-            </div>
-        {/if}
-        <div class="sb-header">
-            <div class="sb-searchbar ">
-                <input id="query" type="text" placeholder="" class="text" size="1" />
-            </div>
-        </div>
-        <div class="sb-list">
-            <div class="dream-card">
-                {#each sidebarDreams as dream}
-                    <DreamCard 
-                        title={dream.title} 
-                        date={dream.date} 
-                        rating={dream.rating} 
-                        tags={dream.tags}
-                        text={dream.text}
-                        on:select={handleDreamSelect}
-                    />
-                {/each}
-            </div>
-        </div>
-        <div class="sb-footer">
-            <div class="sb-profile-container" 
-                 on:click={toggleProfilePopup}
-                 on:keydown={(e) => e.key === 'Enter' && toggleProfilePopup()}
-                 role="button"
-                 tabindex="0">
-                <div class="sb-profile-icon">
-                    <div class="sb-placeholder-circle"></div>
-                </div>
-                <div class="sb-profile-name">
-                    {$user ? ($user.phone || $user.email || 'User') : 'Username'}
-                </div>
-            </div>
-            
-            {#if showProfilePopup}
-                <div class="profile-popup">
-                    <button class="popup-item" on:click={handleSettings}>
-                        <span>Settings</span>
-                    </button>
-                    <button class="popup-item" on:click={handleLogout}>
-                        <span>Logout</span>
-                    </button>
-                </div>
-            {/if}
-        </div>
-    </div>
+    <Sidebar 
+        bind:this={sidebarRef}
+        user={$user}
+        on:logout={handleSidebarLogout}
+        on:showDreamEntry={handleSidebarShowDreamEntry}
+        on:dreamSelect={handleSidebarDreamSelect}
+    />
     <div class="content">
         <div class="content-header">
             {#if !$user}
@@ -258,6 +209,7 @@
                             <div class="dream-item">
                                 <DreamView 
                                     dream={dream}
+                                    currentUserId={$user?.id}
                                 />
                             </div>
                         {/each}
@@ -274,23 +226,63 @@
     on:submit={handleLoginSuccess}
 />
 
+<DreamEntryModal 
+    show={showDreamEntryModal} 
+    on:close={() => showDreamEntryModal = false}
+    on:success={handleDreamEntrySuccess}
+/>
+
+<Toast 
+    bind:show={showToast}
+    message={toastMessage}
+    type={toastType}
+    on:dismiss={handleToastDismiss}
+/>
+
 <style>
-    /* Sidebar welcome message styles */
-    .sb-welcome {
-        padding: calc(var(--spacing) * 1.5);
+    .page-container {
+        display: flex;
+        height: 100vh;
+        background: var(--bg-primary);
+    }
+    
+    .content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    
+    .content-header {
+        padding: var(--spacing);
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        min-height: 60px;
+    }
+    
+    .login-btn {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: calc(var(--spacing) * 1.5) calc(var(--spacing) * 2);
         border-radius: var(--rad);
-        margin: var(--spacing);
-        margin-bottom: calc(var(--spacing) * 1.5);
+        font-size: var(--normal);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
         box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
     }
     
-    .welcome-message {
-        color: white;
-        font-size: var(--normal);
-        font-weight: 600;
-        text-align: center;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    .login-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .content-main {
+        flex: 1;
+        overflow: hidden;
     }
 
     /* Login prompt styles */
