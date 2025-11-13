@@ -1,5 +1,6 @@
 <script lang="ts">
     import Tag from './Tag.svelte';
+    import EditDreamModal from './EditDreamModal.svelte';
     import { createEventDispatcher } from 'svelte';
     
     interface DreamData {
@@ -16,6 +17,7 @@
     
     let isEditingRating = false;
     let tempRating = 0;
+    let showEditModal = false;
     
     // Function to format date nicely
     function formatDate(dateString: string): string {
@@ -72,6 +74,28 @@
     function setTempRating(rating: number) {
         tempRating = rating;
     }
+    
+    // Edit dream functionality
+    function handleEditDream() {
+        showEditModal = true;
+    }
+    
+    function handleDreamUpdated(event: CustomEvent) {
+        const { title, content, tags } = event.detail;
+        // Update the local dream object
+        if (dream) {
+            dream = {
+                ...dream,
+                title,
+                text: content,
+                tags: tags ? tags.map((tag: string, index: number) => ({
+                    color: ['#ff6b6b', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#a8e6cf', '#dda0dd', '#98d8c8'][index % 8],
+                    text: tag
+                })) : []
+            };
+        }
+        dispatch('dreamUpdated', event.detail);
+    }
 </script>
 
 {#if dream}
@@ -127,7 +151,7 @@
         </div>
         
         <div class="dream-actions">
-            <button class="action-btn primary">Edit Dream</button>
+            <button class="action-btn primary" on:click={handleEditDream}>Edit Dream</button>
             <button class="action-btn secondary">Share</button>
             <button class="action-btn danger">Delete</button>
         </div>
@@ -141,6 +165,12 @@
         </div>
     </div>
 {/if}
+
+<EditDreamModal 
+    show={showEditModal}
+    {dream}
+    on:dreamUpdated={handleDreamUpdated}
+/>
 
 <style>
     .dream-view {

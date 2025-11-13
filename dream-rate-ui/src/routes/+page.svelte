@@ -3,6 +3,7 @@
     import DreamCard from '../components/DreamCard.svelte';
     import DreamView from '../components/DreamView.svelte';
     import LoginModal from '../components/LoginModal.svelte';
+    import AddDreamModal from '../components/AddDreamModal.svelte';
     import { user, session, auth } from '../lib/auth';
     import { getRandomDreams } from '../lib/supabase/queries';
     import type { Dream } from '../lib/supabase/types';
@@ -10,6 +11,7 @@
     
     let showProfilePopup = false;
     let showLoginModal = false;
+    let showAddDreamModal = false;
     let selectedDream: any = null;
     let currentDreamIndex = -1; // Track which dream is currently selected
     
@@ -151,6 +153,19 @@
     function updateDreamRating(newRating: number) {
         // This will be handled by individual DreamView components
     }
+    
+    // Add dream functionality
+    function handleAddDream() {
+        if ($user) {
+            showAddDreamModal = true;
+        }
+    }
+    
+    function handleDreamCreated() {
+        // Refresh the dreams feed
+        fetchRandomDreams();
+        showAddDreamModal = false;
+    }
 </script>
 
 <div class="page-container">
@@ -213,6 +228,11 @@
                 <button class="login-btn" on:click={() => showLoginModal = true}>
                     Login
                 </button>
+            {:else}
+                <button class="add-dream-btn" on:click={handleAddDream}>
+                    <span class="plus-icon">+</span>
+                    Add Dream
+                </button>
             {/if}
         </div>
         <div class="content-main">
@@ -274,6 +294,12 @@
     on:submit={handleLoginSuccess}
 />
 
+<AddDreamModal 
+    show={showAddDreamModal}
+    on:dreamCreated={handleDreamCreated}
+    on:close={() => showAddDreamModal = false}
+/>
+
 <style>
     /* Sidebar welcome message styles */
     .sb-welcome {
@@ -291,6 +317,34 @@
         font-weight: 600;
         text-align: center;
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Add Dream button specific styles */
+    .add-dream-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: calc(var(--spacing) * 1.5) calc(var(--spacing) * 2);
+        border-radius: var(--rad);
+        font-size: var(--normal);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: calc(var(--spacing) / 2);
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+    }
+    
+    .add-dream-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .add-dream-btn .plus-icon {
+        font-size: var(--larger);
+        font-weight: bold;
+        line-height: 1;
     }
 
     /* Login prompt styles */
