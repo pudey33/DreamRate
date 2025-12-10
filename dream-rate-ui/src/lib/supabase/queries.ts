@@ -34,6 +34,43 @@ export async function getRandomDreams(userId: string, count: number): Promise<Dr
   return data as Dream[]
 }
 
+// Get dreams with their reviews for feed display
+export async function getDreamsWithReviews(userId: string, count: number) {
+  const { data, error } = await supabase
+    .from('dreams')
+    .select(`
+      *,
+      reviews (*)
+    `)
+    .neq('created_by', userId)
+    .limit(count * 3)
+  
+  if (error) throw error
+  
+  // Randomize and return
+  if (data && data.length > 0) {
+    const shuffled = data.sort(() => Math.random() - 0.5)
+    return shuffled.slice(0, count)
+  }
+  
+  return data
+}
+
+// Get a single dream with all its reviews
+export async function getDreamById(dreamId: number) {
+  const { data, error } = await supabase
+    .from('dreams')
+    .select(`
+      *,
+      reviews (*)
+    `)
+    .eq('id', dreamId)
+    .single()
+  
+  if (error) throw error
+  return data
+}
+
 // this select uses the foreign key relationship b/w dreams and reviews to get reviews in the same query
 export async function getDreamWithReviews(dreamId: number) {
   const { data, error } = await supabase
