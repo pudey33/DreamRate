@@ -13,7 +13,7 @@ export interface Review {
   created_at: string
   created_by: string
   dream_id: number
-  review: string
+  content: string
   overall_rating: number
   ethics_rating: number | null
   creativity_rating: number | null

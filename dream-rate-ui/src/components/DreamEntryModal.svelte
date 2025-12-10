@@ -124,7 +124,7 @@
     <div class="modal-overlay" on:click={handleClose} on:keydown={handleKeydown} role="dialog" aria-modal="true" tabindex="-1">
         <div class="modal-content" on:click|stopPropagation role="document">
             <div class="modal-header">
-                <h2>Share Your Dream</h2>
+                <h2>Write Your Dream</h2>
                 <button class="close-btn" on:click={handleClose} disabled={loading}>×</button>
             </div>
             

@@ -1,6 +1,8 @@
 <script lang="ts">
     import Tag from './Tag.svelte';
+    import DreamRating from './DreamRating.svelte';
     import { createEventDispatcher } from 'svelte';
+    import { submitReview } from '../lib/supabase/mutations';
     
     interface DreamData {
         id?: number;
@@ -17,8 +19,8 @@
     
     const dispatch = createEventDispatcher();
     
-    let isEditingRating = false;
-    let tempRating = 0;
+    let isRatingExpanded = false;
+    let isSubmitting = false;
     
     // Function to format date nicely
     function formatDate(dateString: string): string {
@@ -53,31 +55,47 @@
     }
     
     // Rating functions
-    function startEditingRating() {
-        if (dream) {
-            isEditingRating = true;
-            tempRating = dream.rating;
+    function toggleRating() {
+        // Don't allow rating your own dreams
+        if (isOwner) {
+            return;
+        }
+        isRatingExpanded = !isRatingExpanded;
+    }
+    
+    async function handleRatingSubmit(event: CustomEvent) {
+        if (!currentUserId || !dream?.id) return;
+        
+        isSubmitting = true;
+        
+        try {
+            const reviewData = {
+                ...event.detail,
+                created_by: currentUserId
+            };
+            
+            await submitReview(reviewData);
+            
+            // Dispatch success event to parent
+            dispatch('reviewSubmitted', { success: true });
+            
+            // Close the rating panel
+            isRatingExpanded = false;
+        } catch (error) {
+            console.error('Error submitting review:', error);
+            dispatch('reviewSubmitted', { success: false, error });
+        } finally {
+            isSubmitting = false;
         }
     }
     
-    function cancelEditingRating() {
-        isEditingRating = false;
-        tempRating = 0;
-    }
-    
-    function saveRating() {
-        if (tempRating >= 1 && tempRating <= 5) {
-            dispatch('rateChange', tempRating);
-            isEditingRating = false;
-        }
-    }
-    
-    function setTempRating(rating: number) {
-        tempRating = rating;
+    function handleRatingCancel() {
+        isRatingExpanded = false;
     }
     
     // Check if current user is the creator of this dream
     $: isOwner = currentUserId && dream?.created_by && currentUserId === dream.created_by;
+    $: canRate = currentUserId && !isOwner;
 </script>
 
 {#if dream}
@@ -87,37 +105,6 @@
             <div class="dream-meta">
                 <div class="dream-date">
                     {formatDate(dream.date)}
-                </div>
-                <div class="dream-rating">
-                    {#if isEditingRating}
-                        <div class="rating-editor">
-                            <div class="star-selector">
-                                {#each [1, 2, 3, 4, 5] as star}
-                                    <button 
-                                        class="star-btn"
-                                        class:active={star <= tempRating}
-                                        on:click={() => setTempRating(star)}
-                                    >
-                                        ★
-                                    </button>
-                                {/each}
-                            </div>
-                            <div class="rating-actions">
-                                <button class="rating-save" on:click={saveRating}>Submit</button>
-                                <button class="rating-cancel" on:click={cancelEditingRating}>Cancel</button>
-                            </div>
-                        </div>
-                    {:else}
-                        <div class="rating-display" 
-                             on:click={startEditingRating}
-                             on:keydown={(e) => e.key === 'Enter' && startEditingRating()}
-                             role="button"
-                             tabindex="0">
-                            <span class="stars">{getStarRating(dream.rating)}</span>
-                            <span class="rating-text">{dream.rating}/5</span>
-                            <span class="rating-edit-hint">Click to rate</span>
-                        </div>
-                    {/if}
                 </div>
             </div>
         </div>
@@ -131,6 +118,28 @@
         <div class="dream-content">
             <p class="dream-text">{dream.text}</p>
         </div>
+        
+        <!-- Rating Section -->
+        {#if canRate}
+            <div class="rating-section">
+                <button 
+                    class="rate-dream-btn" 
+                    on:click={toggleRating}
+                    disabled={isSubmitting}
+                >
+                    {isRatingExpanded ? '▼' : '▶'} {isRatingExpanded ? 'Hide Rating' : 'Click to Rate This Dream'}
+                </button>
+                
+                {#if dream.id}
+                    <DreamRating 
+                        dreamId={dream.id}
+                        isExpanded={isRatingExpanded}
+                        on:submit={handleRatingSubmit}
+                        on:cancel={handleRatingCancel}
+                    />
+                {/if}
+            </div>
+        {/if}
         
         <div class="dream-actions">
             {#if isOwner}
@@ -310,7 +319,7 @@
     }
     
     .dream-content {
-        margin-bottom: calc(var(--spacing) * 3);
+        margin-bottom: calc(var(--spacing) * 2);
     }
     
     .dream-text {
@@ -319,6 +328,45 @@
         color: var(--text-secondary);
         margin: 0;
         white-space: pre-wrap;
+    }
+    
+    /* Rating Section */
+    .rating-section {
+        margin-bottom: calc(var(--spacing) * 2);
+        padding-bottom: calc(var(--spacing) * 2);
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .rate-dream-btn {
+        width: 100%;
+        padding: calc(var(--spacing) * 1.5) calc(var(--spacing) * 2);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: var(--rad);
+        font-size: var(--normal);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: calc(var(--spacing) / 2);
+    }
+    
+    .rate-dream-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .rate-dream-btn:active:not(:disabled) {
+        transform: translateY(0);
+    }
+    
+    .rate-dream-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
     }
     
     .dream-actions {
