@@ -1,11 +1,11 @@
 <script lang="ts">
-    import DreamView from '../components/DreamView.svelte';
+    import DreamFeedCard from '../components/DreamFeedCard.svelte';
     import LoginModal from '../components/LoginModal.svelte';
     import DreamEntryModal from '../components/DreamEntryModal.svelte';
     import Sidebar from '../components/Sidebar.svelte';
     import Toast from '../components/Toast.svelte';
     import { user, auth } from '../lib/auth';
-    import { getRandomDreams } from '../lib/supabase/queries';
+    import { getDreamsWithReviews } from '../lib/supabase/queries';
     import type { Dream } from '../lib/supabase/types';
     
     let showLoginModal = false;
@@ -105,7 +105,7 @@
         };
     }
     
-    // Fetch random dreams from Supabase
+    // Fetch random dreams with reviews from Supabase
     async function fetchRandomDreams() {
         if (!$user) return;
         
@@ -113,10 +113,16 @@
         error = null;
         
         try {
-            const dreams = await getRandomDreams($user.id, 10);
-            if (dreams) {
-                supabaseDreams = dreams;
-                transformedDreams = dreams.map(transformDream);
+            const dreamsWithReviews = await getDreamsWithReviews($user.id, 10);
+            if (dreamsWithReviews) {
+                transformedDreams = dreamsWithReviews.map((item: any) => ({
+                    dream: item,
+                    reviews: item.reviews || [],
+                    reviewCount: item.reviews?.length || 0,
+                    averageRating: item.reviews?.length > 0
+                        ? item.reviews.reduce((sum: number, r: any) => sum + r.overall_rating, 0) / item.reviews.length
+                        : 0
+                }));
             }
         } catch (err) {
             console.error('Error fetching dreams:', err);
@@ -205,13 +211,13 @@
                         <p>The dankest dreams. The dankest community.</p>
                     </div>
                     <div class="dreams-list">
-                        {#each transformedDreams as dream, index}
-                            <div class="dream-item">
-                                <DreamView 
-                                    dream={dream}
-                                    currentUserId={$user?.id}
-                                />
-                            </div>
+                        {#each transformedDreams as item, index}
+                            <DreamFeedCard 
+                                dream={item.dream}
+                                reviews={item.reviews}
+                                reviewCount={item.reviewCount}
+                                averageRating={item.averageRating}
+                            />
                         {/each}
                     </div>
                 </div>

@@ -42,7 +42,7 @@ export async function deleteDream(dreamId: number): Promise<void> {
 // Review
 export async function submitReview(reviewData: {
   dream_id: number
-  review: string
+  content: string
   overall_rating: number
   ethics_rating: number | null
   creativity_rating: number | null

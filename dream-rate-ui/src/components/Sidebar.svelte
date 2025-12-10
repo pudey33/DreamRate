@@ -117,7 +117,7 @@
         {#if user}
             <button class="share-dream-btn" on:click={handleShowDreamEntry}>
                 <span class="btn-icon">✨</span>
-                Share Your Dream
+                Write Your Dream
             </button>
         {:else}
             <div class="sb-searchbar">
