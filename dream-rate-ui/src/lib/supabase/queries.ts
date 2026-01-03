@@ -111,3 +111,26 @@ export async function getUserReviews(userId: string) {
   if (error) throw error
   return data
 }
+
+// Search dreams by title, content, or tags
+export async function searchDreams(userId: string, searchQuery: string) {
+  if (!searchQuery.trim()) {
+    return []
+  }
+
+  const query = searchQuery.toLowerCase().trim()
+  
+  const { data, error } = await supabase
+    .from('dreams')
+    .select(`
+      *,
+      reviews (*)
+    `)
+    .neq('created_by', userId)
+    .or(`title.ilike.%${query}%,content.ilike.%${query}%`)
+    .order('created_at', { ascending: false })
+    .limit(20)
+  
+  if (error) throw error
+  return data
+}
