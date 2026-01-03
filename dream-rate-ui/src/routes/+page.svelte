@@ -1,5 +1,6 @@
 <script lang="ts">
     import DreamFeedCard from '../components/DreamFeedCard.svelte';
+    import DreamSearch from '../components/DreamSearch.svelte';
     import LoginModal from '../components/LoginModal.svelte';
     import DreamEntryModal from '../components/DreamEntryModal.svelte';
     import Sidebar from '../components/Sidebar.svelte';
@@ -210,6 +211,7 @@
                         <h2>Dream Rater</h2>
                         <p>The dankest dreams. The dankest community.</p>
                     </div>
+                    <DreamSearch />
                     <div class="dreams-list">
                         {#each transformedDreams as item, index}
                             <DreamFeedCard 
