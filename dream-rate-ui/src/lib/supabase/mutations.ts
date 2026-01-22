@@ -2,13 +2,12 @@ import { supabase } from './client.js'
 import type { Dream, Review } from './types.js'
 
 // Dream on, supaboi
-export async function submitDream(title: string, content: string, created_by: string, tags?: string[]): Promise<Dream> {
+export async function submitDream(title: string, content: string, tags?: string[]): Promise<Dream> {
   const { data, error } = await supabase
     .from('dreams')
     .insert({
       title: title,
       content: content,
-      created_by: created_by,
       tags: tags || null
     })
     .select()

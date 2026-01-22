@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store'
-import { supabase } from './supa-queries.js'
+import { supabase } from './supabase/client.js'
 import type { User, Session } from '@supabase/supabase-js'
 import { env } from '$env/dynamic/public'
 

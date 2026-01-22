@@ -59,7 +59,7 @@
         error = '';
         
         try {
-            await submitDream(title.trim(), content.trim(), $user.id, tags.length > 0 ? tags : undefined);
+            await submitDream(title.trim(), content.trim(), tags.length > 0 ? tags : undefined);
             
             // Reset form
             title = '';

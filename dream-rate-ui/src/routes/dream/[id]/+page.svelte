@@ -67,8 +67,7 @@
         
         try {
             const reviewData = {
-                ...event.detail,
-                created_by: $user.id
+                ...event.detail
             };
             
             await submitReview(reviewData);
