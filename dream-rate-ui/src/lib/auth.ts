@@ -1,11 +1,11 @@
 import { writable } from 'svelte/store'
 import { supabase } from './supabase/client.js'
 import type { User, Session } from '@supabase/supabase-js'
-import { env } from '$env/dynamic/public'
+import { PUBLIC_AUTH_METHOD } from '$app/env/public'
 
 // Auth configuration
 export const authConfig = {
-  method: (env.PUBLIC_AUTH_METHOD || 'phone') as 'email' | 'phone',
+  method: PUBLIC_AUTH_METHOD,
   isEmailAuth: () => authConfig.method === 'email',
   isPhoneAuth: () => authConfig.method === 'phone'
 }

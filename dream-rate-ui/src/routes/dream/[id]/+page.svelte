@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
     import { goto } from '$app/navigation';
     import { onMount } from 'svelte';
     import { user } from '../../../lib/auth';
@@ -21,7 +21,8 @@
     let toastMessage = '';
     let toastType: 'success' | 'error' | 'info' = 'success';
     
-    $: dreamId = parseInt($page.params.id || '0');
+    // The dream is only loaded once on mount, so a plain read of page state is enough
+    const dreamId = parseInt(page.params.id || '0');
     $: isOwner = $user && dreamData && $user.id === dreamData.created_by;
     $: canRate = $user && !isOwner;
     $: userHasReviewed = $user && reviews.some(r => r.created_by === $user.id);
