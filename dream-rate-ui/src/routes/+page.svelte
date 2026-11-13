@@ -158,13 +158,15 @@
 </script>
 
 <div class="page-container">
-    <Sidebar 
-        bind:this={sidebarRef}
-        user={$user}
-        on:logout={handleSidebarLogout}
-        on:showDreamEntry={handleSidebarShowDreamEntry}
-        on:dreamSelect={handleSidebarDreamSelect}
-    />
+    {#if $user}
+        <Sidebar 
+            bind:this={sidebarRef}
+            user={$user}
+            on:logout={handleSidebarLogout}
+            on:showDreamEntry={handleSidebarShowDreamEntry}
+            on:dreamSelect={handleSidebarDreamSelect}
+        />
+    {/if}
     <div class="content">
         <div class="content-header">
             {#if !$user}
@@ -178,8 +180,8 @@
                 <div class="login-prompt">
                     <div class="prompt-content">
                         <div class="prompt-icon">🌙</div>
-                        <h2>Welcome to DreamRate</h2>
-                        <p>Login to discover amazing dreams from our community!</p>
+                        <h2>Welcome, Discerning Dreamer</h2>
+                        <p>Login to discover or share scintillating stories of slumber!</p>
                         <button class="prompt-login-btn" on:click={() => showLoginModal = true}>
                             Get Started
                         </button>
