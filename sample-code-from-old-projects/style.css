@@ -1,0 +1,292 @@
+/* GENERAL */
+:root {
+    --white: #ffffff;
+    --bg-gray: #f5f6f7;
+    --unused-darker-gray: #e9ebed;
+    --input-border-gray: #8c8d8e;
+    --text-gray: black;
+    --text-gray-test: #222222;
+    --ui-lighter-gray: white;
+    --ui-light-gray: #f9f9f9;
+    --ui-hover-gray: #f0f0f0;
+    --ui-mid-gray: #6b7280;
+    --text-lightgray: #545764;
+    /* fails on bg-gray, fine on white */
+
+    --lightred: #fff1f1;
+    --red: #a80000;
+    --darkred: #800000;
+    --lightblue: #eff0ff;
+    --blue: #0a46bd;
+    --darkblue: #08399b;
+    --light-yellow: #ffebab;
+    --dev-header-bg: #fcd34d;
+    /* Look into replacing some of the above colors with these options */
+    --bg-gray-old: #f3f4f6;
+    --otherlightred: #fee2e2;
+    --footer-text-blue: #424b57;
+    --other-text-blue: #342d9a;
+    --bright-blue: #3e35de;
+    /* works on white */
+    --bright-blue2: #2d24db;
+    --bg-blue: #e0e7ff;
+    --link-bright-blue: #2500ee;
+    /* sizes */
+    --rad: 0.4rem;
+    /* standard for border-radius property */
+    --x-smaller: 0.75rem;
+    --smaller: 0.85rem;
+    /* ideally like 0.8rem for desktop? */
+    --normal: 1rem;
+    --larger: 1.15rem;
+    --x-larger: 1.5rem;
+    --xx-larger: 2rem;
+    /* ideally like 26px for mobile? */
+    --icon: 3rem;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    height: 100%;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    font-family: 'Manrope', ui-sans-serif, sans-serif;
+    font-size: 14px;
+    background: var(--bg-gray);
+    color: var(--text-gray);
+}
+
+@media (min-width: 768px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    font-size: var(--normal);
+}
+
+.body>* {
+    flex-shrink: 0;
+}
+
+.body-container {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.bold {
+    font-weight: bold;
+    letter-spacing: 0.05rem;
+}
+
+.space-below {
+    margin-bottom: 1rem;
+}
+
+.shadow1 {
+    box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 1px 3px 1px;
+}
+
+.shadow2 {
+    box-shadow: rgba(17, 17, 26, 0.05) 0px 4px 16px, rgba(17, 17, 26, 0.05) 0px 8px 32px;
+}
+
+/* CUSTOM */
+.centered-flex-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.dir-switcher {
+    display: flex;
+    flex-direction: row;
+    gap: 0.7rem;
+}
+
+@media (max-width: 425px) {
+    .dir-switcher {
+        flex-direction: column;
+    }
+}
+
+.card {
+    background: white;
+    border-radius: var(--rad);
+    padding: 0.7rem;
+}
+
+.input-container {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+/* HYPERLINK AND INPUT ELEMENTS */
+a.link {
+    display: inline-block;
+    color: var(--blue);
+    /*	height: 100%;
+	width: 100%;*/
+}
+
+a.link:hover {
+    color: var(--darkblue);
+}
+
+a.button {
+    display: inline-block;
+    background: var(--blue);
+    color: white;
+    font-size: var(--larger);
+    letter-spacing: 0.05rem;
+    padding: 0.7rem;
+    border: none;
+    border-radius: var(--rad);
+    text-decoration: none;
+    text-align: center;
+}
+
+a.button.small {
+    font-size: var(--normal);
+    padding: 0.25rem;
+}
+
+a.button:hover {
+    background: var(--darkblue);
+}
+
+a.button.light {
+    background: var(--ui-lighter-gray);
+    color: var(--text-gray);
+}
+
+a.button.light:hover {
+    background: var(--ui-light-gray);
+}
+
+input[type=button].link {
+    font-family: 'Manrope', ui-sans-serif, sans-serif;
+    background: none;
+    font-size: var(--normal);
+    text-decoration: underline;
+    color: var(--blue);
+    border: none;
+    letter-spacing: initial;
+    padding: initial;
+    cursor: pointer;
+}
+
+input[type=button].link:hover {
+    color: var(--darkblue);
+}
+
+input[type=button].button {
+    font-family: 'Manrope', ui-sans-serif, sans-serif;
+    background: var(--blue);
+    color: white;
+    font-size: var(--larger);
+    letter-spacing: 0.05rem;
+    padding: 0.7rem;
+    border: none;
+    border-radius: var(--rad);
+    cursor: pointer;
+    text-align: center;
+}
+
+input[type=button].button:hover {
+    background: var(--darkblue);
+}
+
+input[type=button].button.small {
+    font-size: var(--normal);
+    padding: 0.25rem;
+}
+
+input[type=button].button.tiny {
+    font-size: var(--smaller);
+    padding: 0.25rem;
+}
+
+input[type=button].button.light {
+    background: var(--ui-lighter-gray);
+    color: var(--text-gray);
+}
+
+input[type=button].button.light:hover {
+    background: var(--ui-light-gray);
+}
+
+input[type=button].button.red {
+    background: var(--red);
+}
+
+input[type=button].button.red:hover {
+    background: var(--darkred);
+}
+
+.toggle-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+input[type=text].text,
+input[type=password].text {
+    font-family: 'Manrope', ui-sans-serif, sans-serif;
+    font-size: var(--normal);
+    color: var(--text-gray);
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--rad);
+    border: 1px solid var(--input-border-gray);
+}
+
+input[type=text].text:focus,
+input[type=password].text:focus {
+    outline: 2px solid var(--blue);
+}
+
+/* PAGE CONTENT */
+.main {
+    display: flex;
+    flex-direction: row;
+}
+
+/* SIDEBAR */
+.sidebar {
+    max-width: 300px;
+    border: 1px solid red;
+}
+
+.sb-header {
+    display: flex;
+    flex-direction: column;
+}
+
+.sb-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.sb-footer {
+    display: flex;
+    flex-direction: row;
+}
+
+/* CONTENT */
+.content {}

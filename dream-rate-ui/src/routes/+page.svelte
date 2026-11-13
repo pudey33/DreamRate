@@ -1,0 +1,534 @@
+<script lang="ts">
+    import DreamFeedCard from '../components/DreamFeedCard.svelte';
+    import DreamSearch from '../components/DreamSearch.svelte';
+    import LoginModal from '../components/LoginModal.svelte';
+    import DreamEntryModal from '../components/DreamEntryModal.svelte';
+    import Sidebar from '../components/Sidebar.svelte';
+    import Toast from '../components/Toast.svelte';
+    import { user, auth } from '../lib/auth';
+    import { getDreamsWithReviews } from '../lib/supabase/queries';
+    import type { Dream } from '../lib/supabase/types';
+    
+    let showLoginModal = false;
+    let showDreamEntryModal = false;
+    let selectedDream: any = null;
+    let sidebarRef: any; // Reference to sidebar component
+    
+    // Toast state
+    let showToast = false;
+    let toastMessage = '';
+    let toastType: 'success' | 'error' | 'info' = 'success';
+    
+    // Supabase dreams data
+    let supabaseDreams: Dream[] = [];
+    let transformedDreams: any[] = [];
+    let loading = false;
+    let error: string | null = null;
+    
+    // Sidebar event handlers
+    function handleSidebarLogout() {
+        auth.signOut();
+    }
+    
+    function handleSidebarShowDreamEntry() {
+        showDreamEntryModal = true;
+    }
+    
+    function handleSidebarDreamSelect(event: any) {
+        selectedDream = event.detail;
+        console.log('Dream selected for editing:', selectedDream);
+        // TODO: Implement dream editing functionality
+    }
+    
+    function handleLoginSuccess(event: any) {
+        console.log('Login successful:', event.detail);
+        // Modal will close automatically, user state will update via auth store
+    }
+    
+    function handleDreamEntrySuccess() {
+        console.log('Dream submitted successfully');
+        // Refresh the dreams feed to potentially show the new dream
+        fetchRandomDreams();
+        // Refresh the sidebar's user dreams
+        if (sidebarRef) {
+            sidebarRef.refreshUserDreams();
+        }
+        // Show success toast
+        showSuccessToast('Dream shared successfully! 🌟');
+    }
+    
+    // Toast helper functions
+    function showSuccessToast(message: string) {
+        toastMessage = message;
+        toastType = 'success';
+        showToast = true;
+    }
+    
+    function showErrorToast(message: string) {
+        toastMessage = message;
+        toastType = 'error';
+        showToast = true;
+    }
+    
+    function handleToastDismiss() {
+        showToast = false;
+    }
+    
+    // Transform Supabase Dream to DreamView format
+    function transformDream(dream: Dream): any {
+        // Generate default colors for tags
+        const tagColors = ['#ff6b6b', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#a8e6cf', '#dda0dd', '#98d8c8'];
+        
+        // Parse tags from JSONB or use empty array
+        let tags: Array<{ color: string; text: string }> = [];
+        if (dream.tags && Array.isArray(dream.tags)) {
+            tags = dream.tags.map((tag: string, index: number) => ({
+                color: tagColors[index % tagColors.length],
+                text: tag
+            }));
+        }
+        
+        // Format date
+        const formattedDate = new Date(dream.created_at).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        
+        return {
+            id: dream.id,
+            title: dream.title,
+            date: formattedDate,
+            rating: 0, // Placeholder since dreams are unreviewed
+            tags: tags,
+            text: dream.content || 'No content available', // Use 'content' field from database
+            created_by: dream.created_by
+        };
+    }
+    
+    // Fetch random dreams with reviews from Supabase
+    async function fetchRandomDreams() {
+        if (!$user) return;
+        
+        loading = true;
+        error = null;
+        
+        try {
+            const dreamsWithReviews = await getDreamsWithReviews($user.id, 10);
+            if (dreamsWithReviews) {
+                transformedDreams = dreamsWithReviews.map((item: any) => ({
+                    dream: item,
+                    reviews: item.reviews || [],
+                    reviewCount: item.reviews?.length || 0,
+                    averageRating: item.reviews?.length > 0
+                        ? item.reviews.reduce((sum: number, r: any) => sum + r.overall_rating, 0) / item.reviews.length
+                        : 0
+                }));
+            }
+        } catch (err) {
+            console.error('Error fetching dreams:', err);
+            error = 'Failed to load dreams. Please try again.';
+        } finally {
+            loading = false;
+        }
+    }
+    
+    // Load dreams when user changes
+    $: if ($user) {
+        fetchRandomDreams();
+    }
+    
+    // Sidebar dream selection (removed functionality as requested)
+    function handleDreamSelect(event: any) {
+        // Functionality removed as requested
+        console.log('Sidebar dream selection disabled');
+    }
+    
+    function goToNextDream() {
+        // This will be handled by individual DreamView components
+    }
+    
+    function goToPreviousDream() {
+        // This will be handled by individual DreamView components
+    }
+    
+    function updateDreamRating(newRating: number) {
+        // This will be handled by individual DreamView components
+    }
+</script>
+
+<div class="page-container">
+    <Sidebar 
+        bind:this={sidebarRef}
+        user={$user}
+        on:logout={handleSidebarLogout}
+        on:showDreamEntry={handleSidebarShowDreamEntry}
+        on:dreamSelect={handleSidebarDreamSelect}
+    />
+    <div class="content">
+        <div class="content-header">
+            {#if !$user}
+                <button class="login-btn" on:click={() => showLoginModal = true}>
+                    Login
+                </button>
+            {/if}
+        </div>
+        <div class="content-main">
+            {#if !$user}
+                <div class="login-prompt">
+                    <div class="prompt-content">
+                        <div class="prompt-icon">🌙</div>
+                        <h2>Welcome to DreamRate</h2>
+                        <p>Login to discover amazing dreams from our community!</p>
+                        <button class="prompt-login-btn" on:click={() => showLoginModal = true}>
+                            Get Started
+                        </button>
+                    </div>
+                </div>
+            {:else if loading}
+                <div class="loading-state">
+                    <div class="loading-spinner"></div>
+                    <p>Loading dreams...</p>
+                </div>
+            {:else if error}
+                <div class="error-state">
+                    <div class="error-icon">⚠️</div>
+                    <h3>Oops! Something went wrong</h3>
+                    <p>{error}</p>
+                    <button class="retry-btn" on:click={fetchRandomDreams}>
+                        Try Again
+                    </button>
+                </div>
+            {:else if transformedDreams.length === 0}
+                <div class="empty-state">
+                    <div class="empty-icon">💭</div>
+                    <h3>No dreams found</h3>
+                    <p>Be the first to share a dream with the community!</p>
+                </div>
+            {:else}
+                <div class="dreams-feed">
+                    <div class="feed-header">
+                        <h2>Dream Rater</h2>
+                        <p>The dankest dreams. The dankest community.</p>
+                    </div>
+                    <DreamSearch />
+                    <div class="dreams-list">
+                        {#each transformedDreams as item, index}
+                            <DreamFeedCard 
+                                dream={item.dream}
+                                reviews={item.reviews}
+                                reviewCount={item.reviewCount}
+                                averageRating={item.averageRating}
+                            />
+                        {/each}
+                    </div>
+                </div>
+            {/if}
+        </div>
+    </div>
+</div>
+
+<LoginModal 
+    show={showLoginModal} 
+    on:close={() => showLoginModal = false}
+    on:submit={handleLoginSuccess}
+/>
+
+<DreamEntryModal 
+    show={showDreamEntryModal} 
+    on:close={() => showDreamEntryModal = false}
+    on:success={handleDreamEntrySuccess}
+/>
+
+<Toast 
+    bind:show={showToast}
+    message={toastMessage}
+    type={toastType}
+    on:dismiss={handleToastDismiss}
+/>
+
+<style>
+    .page-container {
+        display: flex;
+        height: 100vh;
+        background: var(--bg-primary);
+    }
+    
+    .content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    
+    .content-header {
+        padding: var(--spacing);
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        min-height: 60px;
+    }
+    
+    .login-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: calc(var(--spacing) * 1.5) calc(var(--spacing) * 2);
+        border-radius: var(--rad);
+        font-size: var(--normal);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+    }
+    
+    .login-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .content-main {
+        flex: 1;
+        overflow: hidden;
+    }
+
+    /* Login prompt styles */
+    .login-prompt {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        padding: calc(var(--spacing) * 3);
+    }
+    
+    .prompt-content {
+        text-align: center;
+        max-width: 400px;
+        background: var(--bg-secondary);
+        padding: calc(var(--spacing) * 3);
+        border-radius: var(--rad);
+        border: 1px solid var(--border-color);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .prompt-icon {
+        font-size: 4rem;
+        margin-bottom: var(--spacing);
+        opacity: 0.8;
+    }
+    
+    .prompt-content h2 {
+        font-size: var(--x-larger);
+        color: var(--text-primary);
+        margin: 0 0 var(--spacing) 0;
+        font-weight: 600;
+    }
+    
+    .prompt-content p {
+        font-size: var(--larger);
+        color: var(--text-secondary);
+        margin: 0 0 calc(var(--spacing) * 2) 0;
+        line-height: 1.5;
+    }
+    
+    .prompt-login-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: calc(var(--spacing) * 1.5) calc(var(--spacing) * 3);
+        border-radius: var(--rad);
+        font-size: var(--larger);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+    }
+    
+    .prompt-login-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    /* Loading state styles */
+    .loading-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        padding: calc(var(--spacing) * 3);
+    }
+    
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid var(--border-color);
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: var(--spacing);
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .loading-state p {
+        font-size: var(--larger);
+        color: var(--text-secondary);
+        margin: 0;
+    }
+    
+    /* Error state styles */
+    .error-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        padding: calc(var(--spacing) * 3);
+        text-align: center;
+    }
+    
+    .error-icon {
+        font-size: 3rem;
+        margin-bottom: var(--spacing);
+        opacity: 0.8;
+    }
+    
+    .error-state h3 {
+        font-size: var(--x-larger);
+        color: var(--text-primary);
+        margin: 0 0 var(--spacing) 0;
+        font-weight: 600;
+    }
+    
+    .error-state p {
+        font-size: var(--larger);
+        color: var(--text-secondary);
+        margin: 0 0 calc(var(--spacing) * 2) 0;
+        line-height: 1.5;
+    }
+    
+    .retry-btn {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: calc(var(--spacing) * 1.5) calc(var(--spacing) * 2);
+        border-radius: var(--rad);
+        font-size: var(--normal);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .retry-btn:hover {
+        background: #c82333;
+        transform: translateY(-1px);
+    }
+    
+    /* Empty state styles */
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        padding: calc(var(--spacing) * 3);
+        text-align: center;
+    }
+    
+    .empty-icon {
+        font-size: 4rem;
+        margin-bottom: var(--spacing);
+        opacity: 0.6;
+    }
+    
+    .empty-state h3 {
+        font-size: var(--x-larger);
+        color: var(--text-primary);
+        margin: 0 0 var(--spacing) 0;
+        font-weight: 600;
+    }
+    
+    .empty-state p {
+        font-size: var(--larger);
+        color: var(--text-secondary);
+        margin: 0;
+        line-height: 1.5;
+    }
+    
+    /* Dreams feed styles */
+    .dreams-feed {
+        height: 100%;
+        overflow-y: auto;
+        padding: calc(var(--spacing) * 2);
+    }
+    
+    .feed-header {
+        text-align: center;
+        margin-bottom: calc(var(--spacing) * 3);
+        padding-bottom: calc(var(--spacing) * 2);
+        border-bottom: 2px solid var(--border-color);
+    }
+    
+    .feed-header h2 {
+        font-size: var(--xx-larger);
+        color: var(--text-primary);
+        margin: 0 0 var(--spacing) 0;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .feed-header p {
+        font-size: var(--larger);
+        color: var(--text-secondary);
+        margin: 0;
+        font-weight: 500;
+    }
+    
+    .dreams-list {
+        display: flex;
+        flex-direction: column;
+        gap: calc(var(--spacing) * 3);
+    }
+    
+    .dream-item {
+        background: var(--bg-secondary);
+        border-radius: var(--rad);
+        border: 1px solid var(--border-color);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease;
+        overflow: hidden;
+    }
+    
+    .dream-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        border-color: var(--text-secondary);
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .dreams-feed {
+            padding: var(--spacing);
+        }
+        
+        .feed-header {
+            margin-bottom: calc(var(--spacing) * 2);
+        }
+        
+        .dreams-list {
+            gap: calc(var(--spacing) * 2);
+        }
+        
+        .prompt-content {
+            padding: calc(var(--spacing) * 2);
+        }
+    }
+</style>

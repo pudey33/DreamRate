@@ -1,0 +1,89 @@
+import { writable } from 'svelte/store'
+import { supabase } from './supabase/client.js'
+import type { User, Session } from '@supabase/supabase-js'
+import { PUBLIC_AUTH_METHOD } from '$app/env/public'
+
+// Auth configuration
+export const authConfig = {
+  method: PUBLIC_AUTH_METHOD,
+  isEmailAuth: () => authConfig.method === 'email',
+  isPhoneAuth: () => authConfig.method === 'phone'
+}
+
+// Auth stores
+export const user = writable<User | null>(null)
+export const session = writable<Session | null>(null)
+export const loading = writable(true)
+
+// Initialize auth state
+supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+  session.set(initialSession)
+  user.set(initialSession?.user ?? null)
+  loading.set(false)
+})
+
+// Listen for auth changes
+supabase.auth.onAuthStateChange((event, newSession) => {
+  session.set(newSession)
+  user.set(newSession?.user ?? null)
+  loading.set(false)
+})
+
+// Auth functions
+export const auth = {
+  // Sign up with email and password
+  async signUp(email: string, password: string, displayName?: string) {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          display_name: displayName
+        }
+      }
+    })
+    if (error) throw error
+    return data
+  },
+
+  // Sign in with email and password
+  async signIn(email: string, password: string) {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    })
+    if (error) throw error
+    return data
+  },
+
+  // Sign in with phone number (sends OTP)
+  async signInWithPhone(phone: string) {
+    const { data, error } = await supabase.auth.signInWithOtp({
+      phone: phone
+    })
+    if (error) throw error
+    return data
+  },
+
+  // Verify OTP code
+  async verifyOtp(phone: string, token: string) {
+    const { data, error } = await supabase.auth.verifyOtp({
+      phone: phone,
+      token: token,
+      type: 'sms'
+    })
+    if (error) throw error
+    return data
+  },
+
+  // Sign out
+  async signOut() {
+    const { error } = await supabase.auth.signOut()
+    if (error) throw error
+  },
+
+  // Get current user
+  getCurrentUser() {
+    return supabase.auth.getUser()
+  }
+}
