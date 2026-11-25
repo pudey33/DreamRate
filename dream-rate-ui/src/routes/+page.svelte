@@ -517,21 +517,6 @@
         gap: calc(var(--spacing) * 3);
     }
     
-    .dream-item {
-        background: var(--bg-secondary);
-        border-radius: var(--rad);
-        border: 1px solid var(--border-color);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        transition: all 0.2s ease;
-        overflow: hidden;
-    }
-    
-    .dream-item:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-        border-color: var(--text-secondary);
-    }
-    
     /* Mobile-only controls are hidden on desktop */
     .mobile-only {
         display: none;
