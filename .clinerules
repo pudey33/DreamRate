@@ -1,0 +1,17 @@
+# DreamRate project rules
+
+## Before every commit (and push)
+
+Run these from `dream-rate-ui/` and make sure they pass before running `git commit`:
+
+1. `npx wrangler types --check` - verifies `worker-configuration.d.ts` is up to date with `wrangler.jsonc`.
+   - If it reports the file is out of date, run `npm run gen` (`wrangler types`) and include the regenerated `worker-configuration.d.ts` in the commit.
+   - Always run this when `wrangler.jsonc` or `.dev.vars` changed.
+2. `npm run check` - runs the wrangler types check, `svelte-kit sync` and `svelte-check`. It must exit 0 (currently 0 errors, 0 warnings).
+3. `npm run build` - the production build must succeed.
+
+Do not commit or push if any of these fail. Fix the problem first, or tell the user why it can't be fixed.
+
+## Commit style
+
+Use conventional commits, matching the existing history (for example `feat(mobile): ...`, `fix(auth): ...`, `chore: ...`).
