@@ -2,7 +2,14 @@
     import { goto } from '$app/navigation';
     import { searchDreams } from '../lib/supabase/queries';
     import { user } from '../lib/auth';
+    import { createEventDispatcher } from 'svelte';
     
+    // When true, searching only runs on Enter (no live results while typing)
+    export let enterOnly = false;
+    
+    const dispatch = createEventDispatcher();
+    
+    let tooShort = false;
     let searchQuery = '';
     let searchResults: any[] = [];
     let isSearching = false;
@@ -11,9 +18,17 @@
     
     // Perform search with debouncing
     async function performSearch(query: string) {
-        if (!$user || query.length < 5) {
+        tooShort = false;
+        if (!$user) {
             searchResults = [];
             showDropdown = false;
+            return;
+        }
+        if (query.length < 5) {
+            searchResults = [];
+            // In Enter-only mode, tell the user why nothing happened
+            tooShort = enterOnly;
+            showDropdown = enterOnly;
             return;
         }
         
@@ -60,6 +75,13 @@
         // Clear existing timeout
         clearTimeout(searchTimeout);
         
+        if (enterOnly) {
+            // Hide any previous results while typing; wait for Enter
+            showDropdown = false;
+            tooShort = false;
+            return;
+        }
+        
         // Set new timeout for debouncing
         searchTimeout = setTimeout(() => {
             performSearch(searchQuery);
@@ -67,7 +89,15 @@
     }
     
     // Handle result selection
+    function handleKeydown(event: KeyboardEvent) {
+        if (enterOnly && event.key === 'Enter') {
+            event.preventDefault();
+            performSearch(searchQuery.trim());
+        }
+    }
+    
     function selectResult(dreamId: number) {
+        dispatch('select', { id: dreamId });
         goto(`/dream/${dreamId}`);
         searchQuery = '';
         searchResults = [];
@@ -76,6 +106,7 @@
     
     // Clear search
     function clearSearch() {
+        tooShort = false;
         searchQuery = '';
         searchResults = [];
         showDropdown = false;
@@ -98,8 +129,10 @@
         type="text"
         bind:value={searchQuery}
         on:input={handleInput}
-        on:focus={() => { if (searchResults.length > 0) showDropdown = true; }}
-        placeholder="Search dreams... (type at least 5 characters)"
+        on:keydown={handleKeydown}
+        on:focus={() => { if (!enterOnly && searchResults.length > 0) showDropdown = true; }}
+        enterkeyhint="search"
+        placeholder={enterOnly ? 'Search Dreams' : 'Search dreams... (type at least 5 characters)'}
         class="search-input"
     />
     {#if searchQuery}
@@ -114,6 +147,10 @@
                 <div class="dropdown-message">
                     <div class="loading-spinner"></div>
                     Searching dreams...
+                </div>
+            {:else if tooShort}
+                <div class="dropdown-message">
+                    Type at least 5 characters, then press Enter
                 </div>
             {:else if searchResults.length === 0}
                 <div class="dropdown-message">
@@ -326,6 +363,20 @@
     @media (max-width: 768px) {
         .dream-search-container {
             max-width: 100%;
+        }
+        
+        .search-input {
+            text-overflow: ellipsis;
+        }
+        
+        .clear-btn {
+            width: 36px;
+            height: 36px;
+            right: var(--spacing);
+        }
+        
+        .search-dropdown {
+            max-height: min(60dvh, 400px);
         }
         
         .result-header {

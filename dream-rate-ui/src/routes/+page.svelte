@@ -13,6 +13,7 @@
     let showDreamEntryModal = false;
     let selectedDream: any = null;
     let sidebarRef: any; // Reference to sidebar component
+    let drawerOpen = false; // Mobile slide-out drawer state
     
     // Toast state
     let showToast = false;
@@ -31,6 +32,7 @@
     }
     
     function handleSidebarShowDreamEntry() {
+        drawerOpen = false;
         showDreamEntryModal = true;
     }
     
@@ -162,13 +164,21 @@
         <Sidebar 
             bind:this={sidebarRef}
             user={$user}
-            on:logout={handleSidebarLogout}
+            mobileOpen={drawerOpen}
+            on:close={() => drawerOpen = false}
+            on:logout={() => { drawerOpen = false; handleSidebarLogout(); }}
             on:showDreamEntry={handleSidebarShowDreamEntry}
             on:dreamSelect={handleSidebarDreamSelect}
         />
     {/if}
     <div class="content">
         <div class="content-header">
+            {#if $user}
+                <button class="menu-btn mobile-only" aria-label="Open menu" on:click={() => drawerOpen = true}>
+                    ☰
+                </button>
+            {/if}
+            <span class="mobile-title mobile-only">Dream Rater</span>
             {#if !$user}
                 <button class="login-btn" on:click={() => showLoginModal = true}>
                     Login
@@ -213,7 +223,14 @@
                         <h2>Dream Rater</h2>
                         <p>The dankest dreams. The dankest community.</p>
                     </div>
-                    <DreamSearch />
+                    <div class="log-dream-row mobile-only">
+                        <button class="log-dream-btn" on:click={() => showDreamEntryModal = true}>
+                            <span aria-hidden="true">✨</span> Log Dream
+                        </button>
+                    </div>
+                    <div class="desktop-only">
+                        <DreamSearch />
+                    </div>
                     <div class="dreams-list">
                         {#each transformedDreams as item, index}
                             <DreamFeedCard 
@@ -515,8 +532,82 @@
         border-color: var(--text-secondary);
     }
     
+    /* Mobile-only controls are hidden on desktop */
+    .mobile-only {
+        display: none;
+    }
+    
     /* Responsive design */
     @media (max-width: 768px) {
+        .page-container {
+            flex-direction: column;
+        }
+        
+        .content {
+            width: 100%;
+        }
+        
+        .content-header {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            gap: var(--spacing);
+            justify-content: space-between;
+            background: var(--bg-secondary);
+            padding-top: max(var(--spacing), env(safe-area-inset-top));
+            flex-shrink: 0;
+        }
+        
+        .mobile-only.mobile-title {
+            display: block;
+            flex: 1;
+            font-size: var(--larger);
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .desktop-only {
+            display: none;
+        }
+        
+        .log-dream-row.mobile-only {
+            display: flex;
+            justify-content: center;
+            margin-bottom: calc(var(--spacing) * 2);
+        }
+        
+        .log-dream-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: calc(var(--spacing) / 2);
+            min-height: 50px;
+            padding: 0 calc(var(--spacing) * 4);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: var(--rad);
+            font-size: var(--normal);
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+        
+        .menu-btn.mobile-only {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--rad);
+            color: var(--text-primary);
+            font-size: var(--x-larger);
+            line-height: 1;
+            cursor: pointer;
+        }
+        
         .dreams-feed {
             padding: var(--spacing);
         }

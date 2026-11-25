@@ -524,6 +524,12 @@
         
         .modal-content {
             max-height: 95vh;
+            max-height: 95dvh;
+        }
+        
+        .remove-tag {
+            width: 24px;
+            height: 24px;
         }
         
         .modal-header {

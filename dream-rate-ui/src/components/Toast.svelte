@@ -158,7 +158,7 @@
     /* Responsive design */
     @media (max-width: 768px) {
         .toast {
-            bottom: var(--spacing);
+            bottom: calc(var(--spacing) + env(safe-area-inset-bottom));
             left: var(--spacing);
             right: var(--spacing);
             transform: none;

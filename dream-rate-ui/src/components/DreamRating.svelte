@@ -446,7 +446,14 @@
         }
         
         .star-btn {
-            font-size: var(--larger);
+            font-size: 1.75rem;
+            min-width: 44px;
+            min-height: 44px;
+        }
+        
+        .review-header {
+            flex-direction: column;
+            align-items: flex-start;
         }
     }
 </style>

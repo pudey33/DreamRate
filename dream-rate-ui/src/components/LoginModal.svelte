@@ -286,6 +286,23 @@
         display: flex;
         flex-direction: column;
         position: relative;
+        overflow-y: auto;
+    }
+    
+    @media (max-width: 768px) {
+        .modal-overlay {
+            height: 100dvh;
+        }
+        
+        .modal-body {
+            justify-content: flex-start;
+            padding: calc(var(--spacing) * 6) calc(var(--spacing) * 2) calc(var(--spacing) * 3);
+        }
+        
+        .close-btn {
+            top: max(var(--spacing), env(safe-area-inset-top));
+            right: var(--spacing);
+        }
     }
     
     .close-btn {

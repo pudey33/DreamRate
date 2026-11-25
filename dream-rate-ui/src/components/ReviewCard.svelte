@@ -152,8 +152,13 @@
         }
         
         .additional-ratings {
-            flex-direction: column;
+            flex-direction: row;
+            flex-wrap: wrap;
             gap: calc(var(--spacing) / 2);
+        }
+        
+        .review-content p {
+            overflow-wrap: anywhere;
         }
     }
 </style>
