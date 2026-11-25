@@ -1,7 +1,7 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
     import { searchDreams } from '../lib/supabase/queries';
-    import { user } from '../lib/auth';
+    import { user, permissions } from '../lib/auth';
     import { createEventDispatcher } from 'svelte';
     
     // When true, searching only runs on Enter (no live results while typing)
@@ -19,7 +19,7 @@
     // Perform search with debouncing
     async function performSearch(query: string) {
         tooShort = false;
-        if (!$user) {
+        if (!$permissions.canViewDreams) {
             searchResults = [];
             showDropdown = false;
             return;
@@ -36,7 +36,7 @@
         showDropdown = true;
         
         try {
-            const results = await searchDreams($user.id, query);
+            const results = await searchDreams($user?.id ?? null, query);
             
             // Transform results
             searchResults = results.map((item: any) => {

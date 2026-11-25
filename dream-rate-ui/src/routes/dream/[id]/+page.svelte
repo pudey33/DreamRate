@@ -2,7 +2,7 @@
     import { page } from '$app/state';
     import { goto } from '$app/navigation';
     import { onMount } from 'svelte';
-    import { user } from '../../../lib/auth';
+    import { user, permissions } from '../../../lib/auth';
     import { getDreamById } from '../../../lib/supabase/queries';
     import { submitReview } from '../../../lib/supabase/mutations';
     import ReviewCard from '../../../components/ReviewCard.svelte';
@@ -12,6 +12,8 @@
     import LoginModal from '../../../components/LoginModal.svelte';
     
     let showLoginModal = false;
+    let pendingRate = false;
+    let loginCompletedForRate = false;
     const tagColors = ['#ff6b6b', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#a8e6cf', '#dda0dd', '#98d8c8'];
     $: tags = dreamData?.tags && Array.isArray(dreamData.tags)
         ? dreamData.tags.map((text: string, i: number) => ({ text, color: tagColors[i % tagColors.length] }))
@@ -31,9 +33,14 @@
     
     // The dream is only loaded once on mount, so a plain read of page state is enough
     const dreamId = parseInt(page.params.id || '0');
-    $: isOwner = $user && dreamData && $user.id === dreamData.created_by;
-    $: canRate = $user && !isOwner;
-    $: userHasReviewed = $user && reviews.some(r => r.created_by === $user.id);
+    $: isOwner = Boolean($user && dreamData && $user.id === dreamData.created_by);
+    $: userHasReviewed = Boolean($user && reviews.some(r => r.created_by === $user.id));
+    $: if (loginCompletedForRate && $permissions.canRateDreams && dreamData) {
+        loginCompletedForRate = false;
+        if (!isOwner && !userHasReviewed) {
+            isRatingExpanded = true;
+        }
+    }
     
     onMount(async () => {
         await loadDream();
@@ -65,8 +72,24 @@
     }
     
     function toggleRating() {
-        if (!canRate || userHasReviewed) return;
+        if (!$permissions.canRateDreams) {
+            pendingRate = true;
+            showLoginModal = true;
+            return;
+        }
+        if (isOwner || userHasReviewed) return;
         isRatingExpanded = !isRatingExpanded;
+    }
+    
+    function handleLoginSubmit() {
+        loginCompletedForRate = pendingRate;
+        pendingRate = false;
+        showLoginModal = false;
+    }
+    
+    function handleLoginClose() {
+        pendingRate = false;
+        showLoginModal = false;
     }
     
     async function handleRatingSubmit(event: CustomEvent) {
@@ -183,7 +206,7 @@
                 </div>
                 
                 <!-- Rating Section -->
-                {#if canRate && !userHasReviewed}
+                {#if !isOwner && !userHasReviewed}
                     <div class="rating-section">
                         <button 
                             class="rate-dream-btn" 
@@ -193,22 +216,18 @@
                             {isRatingExpanded ? '▼' : '▶'} {isRatingExpanded ? 'Hide Rating' : 'Rate This Dream'}
                         </button>
                         
-                        <DreamRating 
-                            dreamId={dreamId}
-                            isExpanded={isRatingExpanded}
-                            on:submit={handleRatingSubmit}
-                            on:cancel={handleRatingCancel}
-                        />
+                        {#if $permissions.canRateDreams}
+                            <DreamRating 
+                                dreamId={dreamId}
+                                isExpanded={isRatingExpanded}
+                                on:submit={handleRatingSubmit}
+                                on:cancel={handleRatingCancel}
+                            />
+                        {/if}
                     </div>
                 {:else if userHasReviewed}
                     <div class="already-reviewed">
                         <p>✓ You've already reviewed this dream</p>
-                    </div>
-                {:else if !$user}
-                    <div class="rating-section">
-                        <button class="rate-dream-btn" on:click={() => showLoginModal = true}>
-                            Login to Rate This Dream
-                        </button>
                     </div>
                 {/if}
                 
@@ -235,8 +254,8 @@
 
 <LoginModal
     show={showLoginModal}
-    on:close={() => showLoginModal = false}
-    on:submit={() => showLoginModal = false}
+    on:close={handleLoginClose}
+    on:submit={handleLoginSubmit}
 />
 
 <Toast 

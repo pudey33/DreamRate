@@ -14,14 +14,18 @@ export async function getUserDreams(userId: string): Promise<Dream[]> {
 }
 
 //This is a full sort on the dreams table. If we get a massive dataset eventually, then this should probably be a lambda function instead.
-export async function getRandomDreams(userId: string, count: number): Promise<Dream[] | null> {
+export async function getRandomDreams(userId: string | null | undefined, count: number): Promise<Dream[] | null> {
   // Use a workaround for random ordering since RANDOM() isn't supported in .order()
   // We'll fetch more records and randomize client-side for now
-  const { data, error } = await supabase
+  let query = supabase
     .from('dreams')
     .select('*')
-    .neq('created_by', userId)
-    .limit(count * 3) // Fetch more records to randomize from
+
+  if (userId) {
+    query = query.neq('created_by', userId)
+  }
+
+  const { data, error } = await query.limit(count * 3) // Fetch more records to randomize from
   
   if (error) throw error
   
@@ -35,15 +39,19 @@ export async function getRandomDreams(userId: string, count: number): Promise<Dr
 }
 
 // Get dreams with their reviews for feed display
-export async function getDreamsWithReviews(userId: string, count: number) {
-  const { data, error } = await supabase
+export async function getDreamsWithReviews(userId: string | null | undefined, count: number) {
+  let query = supabase
     .from('dreams')
     .select(`
       *,
       reviews (*)
     `)
-    .neq('created_by', userId)
-    .limit(count * 3)
+
+  if (userId) {
+    query = query.neq('created_by', userId)
+  }
+
+  const { data, error } = await query.limit(count * 3)
   
   if (error) throw error
   
@@ -113,21 +121,26 @@ export async function getUserReviews(userId: string) {
 }
 
 // Search dreams by title, content, or tags
-export async function searchDreams(userId: string, searchQuery: string) {
+export async function searchDreams(userId: string | null | undefined, searchQuery: string) {
   if (!searchQuery.trim()) {
     return []
   }
 
-  const query = searchQuery.toLowerCase().trim()
-  
-  const { data, error } = await supabase
+  const searchTerm = searchQuery.toLowerCase().trim()
+
+  let query = supabase
     .from('dreams')
     .select(`
       *,
       reviews (*)
     `)
-    .neq('created_by', userId)
-    .or(`title.ilike.%${query}%,content.ilike.%${query}%`)
+
+  if (userId) {
+    query = query.neq('created_by', userId)
+  }
+
+  const { data, error } = await query
+    .or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%`)
     .order('created_at', { ascending: false })
     .limit(20)
   

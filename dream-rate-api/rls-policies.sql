@@ -9,10 +9,14 @@ ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
 -- DREAMS TABLE RLS POLICIES
 -- =====================================================
 
--- Policy 1: Users can view their own dreams (for "My Dreams" section)
-CREATE POLICY "Users can view own dreams" ON dreams
+-- Policy 1: Anyone (including unlogged-in guests) can view dreams
+-- Migration note for existing databases:
+--   DROP POLICY IF EXISTS "Users can view own dreams" ON dreams;
+--   DROP POLICY IF EXISTS "Users can view others dreams for rating" ON dreams;
+--   CREATE POLICY "Anyone can view dreams" ON dreams FOR SELECT USING (true);
+CREATE POLICY "Anyone can view dreams" ON dreams
   FOR SELECT 
-  USING (auth.uid() = created_by);
+  USING (true);
 
 -- Policy 2: Users can insert their own dreams
 CREATE POLICY "Users can insert own dreams" ON dreams
@@ -29,11 +33,6 @@ CREATE POLICY "Users can update own dreams" ON dreams
 CREATE POLICY "Users can delete own dreams" ON dreams
   FOR DELETE 
   USING (auth.uid() = created_by);
-
--- Policy 5: Users can view others' dreams for rating (excluding their own)
-CREATE POLICY "Users can view others dreams for rating" ON dreams
-  FOR SELECT 
-  USING (auth.uid() != created_by);
 
 -- =====================================================
 -- REVIEWS TABLE RLS POLICIES

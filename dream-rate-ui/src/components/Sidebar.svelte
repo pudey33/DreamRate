@@ -84,10 +84,19 @@
     // Load user dreams when user changes
     $: if (user) {
         fetchUserDreams();
+    } else {
+        userDreams = [];
+        transformedUserDreams = [];
+        userDreamsError = null;
     }
     
     // Event handlers
-    function toggleProfilePopup() {
+    function handleProfileClick() {
+        if (!user) {
+            closeDrawer();
+            dispatch('login');
+            return;
+        }
         showProfilePopup = !showProfilePopup;
     }
     
@@ -136,20 +145,14 @@
     {/if}
     
     <div class="sb-header">
-        {#if user}
-            <button class="share-dream-btn" on:click={handleShowDreamEntry}>
-                <span class="btn-icon">✨</span>
-                Log Dream
-            </button>
-            <!-- Search lives in the drawer on mobile only (desktop keeps it in the feed) -->
-            <div class="drawer-search">
-                <DreamSearch enterOnly={true} on:select={closeDrawer} />
-            </div>
-        {:else}
-            <div class="sb-searchbar">
-                <input id="query" type="text" placeholder="Login to share dreams" class="text" size="1" disabled />
-            </div>
-        {/if}
+        <button class="share-dream-btn" on:click={handleShowDreamEntry}>
+            <span class="btn-icon">✨</span>
+            Log Dream
+        </button>
+        <!-- Search lives in the drawer on mobile only (desktop keeps it in the feed) -->
+        <div class="drawer-search">
+            <DreamSearch enterOnly={true} on:select={closeDrawer} />
+        </div>
     </div>
     
     <div class="sb-list">
@@ -200,19 +203,19 @@
     
     <div class="sb-footer">
         <div class="sb-profile-container" 
-             on:click={toggleProfilePopup}
-             on:keydown={(e) => e.key === 'Enter' && toggleProfilePopup()}
+             on:click={handleProfileClick}
+             on:keydown={(e) => e.key === 'Enter' && handleProfileClick()}
              role="button"
              tabindex="0">
             <div class="sb-profile-icon">
                 <div class="sb-placeholder-circle"></div>
             </div>
             <div class="sb-profile-name">
-                {user ? (user.phone || user.email || 'User') : 'Username'}
+                {user ? (user.phone || user.email || 'User') : 'Guest — Login'}
             </div>
         </div>
         
-        {#if showProfilePopup}
+        {#if user && showProfilePopup}
             <div class="profile-popup">
                 <button class="popup-item" on:click={handleSettings}>
                     <span>Settings</span>
@@ -286,28 +289,6 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-    }
-    
-    .sb-searchbar {
-        margin: var(--spacing);
-    }
-    
-    .sb-searchbar input {
-        width: 100%;
-        padding: calc(var(--spacing) * 1.5);
-        border: 1px solid var(--border-color);
-        border-radius: var(--rad);
-        background: var(--bg-secondary);
-        color: var(--text-primary);
-        font-size: var(--normal);
-        box-sizing: border-box;
-    }
-    
-    .sb-searchbar input:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-        background: var(--bg-secondary);
-        color: var(--text-secondary);
     }
     
     /* Section header */

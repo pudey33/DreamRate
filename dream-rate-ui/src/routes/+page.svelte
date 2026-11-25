@@ -5,12 +5,24 @@
     import DreamEntryModal from '../components/DreamEntryModal.svelte';
     import Sidebar from '../components/Sidebar.svelte';
     import Toast from '../components/Toast.svelte';
-    import { user, auth } from '../lib/auth';
+    import { user, auth, loading as authLoading, permissions } from '../lib/auth';
     import { getDreamsWithReviews } from '../lib/supabase/queries';
     import type { Dream } from '../lib/supabase/types';
     
+    const taglines = [
+        'The dankest dreams. The dankest community.',
+        'Dream Big, Write Bigger',
+        'Sleepy Sweeping Swaggy Salience',
+        "Dive into somebody else's mind",
+        'Dreams, the original psychedelic!',
+        'Written while groggy!',
+        "Do Electric Sheep dream? Then don't Use AI for your dreams!"
+    ];
+    const tagline = taglines[Math.floor(Math.random() * taglines.length)];
+    
     let showLoginModal = false;
     let showDreamEntryModal = false;
+    let pendingDreamEntry = false;
     let selectedDream: any = null;
     let sidebarRef: any; // Reference to sidebar component
     let drawerOpen = false; // Mobile slide-out drawer state
@@ -23,17 +35,27 @@
     // Supabase dreams data
     let supabaseDreams: Dream[] = [];
     let transformedDreams: any[] = [];
-    let loading = false;
+    let loading = true;
     let error: string | null = null;
+    let lastFetchedForUser: string | null | undefined = undefined;
     
     // Sidebar event handlers
     function handleSidebarLogout() {
         auth.signOut();
     }
     
-    function handleSidebarShowDreamEntry() {
+    function requestLogDream() {
         drawerOpen = false;
+        if (!$permissions.canCreateDreams) {
+            pendingDreamEntry = true;
+            showLoginModal = true;
+            return;
+        }
         showDreamEntryModal = true;
+    }
+    
+    function handleSidebarShowDreamEntry() {
+        requestLogDream();
     }
     
     function handleSidebarDreamSelect(event: any) {
@@ -42,9 +64,18 @@
         // TODO: Implement dream editing functionality
     }
     
+    function handleLoginClose() {
+        showLoginModal = false;
+        pendingDreamEntry = false;
+    }
+    
     function handleLoginSuccess(event: any) {
         console.log('Login successful:', event.detail);
-        // Modal will close automatically, user state will update via auth store
+        showLoginModal = false;
+        if (pendingDreamEntry) {
+            pendingDreamEntry = false;
+            showDreamEntryModal = true;
+        }
     }
     
     function handleDreamEntrySuccess() {
@@ -110,13 +141,13 @@
     
     // Fetch random dreams with reviews from Supabase
     async function fetchRandomDreams() {
-        if (!$user) return;
+        if (!$permissions.canViewDreams) return;
         
         loading = true;
         error = null;
         
         try {
-            const dreamsWithReviews = await getDreamsWithReviews($user.id, 10);
+            const dreamsWithReviews = await getDreamsWithReviews($user?.id ?? null, 10);
             if (dreamsWithReviews) {
                 transformedDreams = dreamsWithReviews.map((item: any) => ({
                     dream: item,
@@ -135,9 +166,13 @@
         }
     }
     
-    // Load dreams when user changes
-    $: if ($user) {
-        fetchRandomDreams();
+    // Load dreams once auth state resolves and re-fetch if user logs in or out
+    $: if (!$authLoading) {
+        const currentUserId = $user?.id ?? null;
+        if (currentUserId !== lastFetchedForUser) {
+            lastFetchedForUser = currentUserId;
+            fetchRandomDreams();
+        }
     }
     
     // Sidebar dream selection (removed functionality as requested)
@@ -160,24 +195,21 @@
 </script>
 
 <div class="page-container">
-    {#if $user}
-        <Sidebar 
-            bind:this={sidebarRef}
-            user={$user}
-            mobileOpen={drawerOpen}
-            on:close={() => drawerOpen = false}
-            on:logout={() => { drawerOpen = false; handleSidebarLogout(); }}
-            on:showDreamEntry={handleSidebarShowDreamEntry}
-            on:dreamSelect={handleSidebarDreamSelect}
-        />
-    {/if}
+    <Sidebar 
+        bind:this={sidebarRef}
+        user={$user}
+        mobileOpen={drawerOpen}
+        on:close={() => drawerOpen = false}
+        on:login={() => { drawerOpen = false; showLoginModal = true; }}
+        on:logout={() => { drawerOpen = false; handleSidebarLogout(); }}
+        on:showDreamEntry={handleSidebarShowDreamEntry}
+        on:dreamSelect={handleSidebarDreamSelect}
+    />
     <div class="content">
         <div class="content-header">
-            {#if $user}
-                <button class="menu-btn mobile-only" aria-label="Open menu" on:click={() => drawerOpen = true}>
-                    ☰
-                </button>
-            {/if}
+            <button class="menu-btn mobile-only" aria-label="Open menu" on:click={() => drawerOpen = true}>
+                ☰
+            </button>
             <span class="mobile-title mobile-only">Dream Rater</span>
             {#if !$user}
                 <button class="login-btn" on:click={() => showLoginModal = true}>
@@ -186,18 +218,7 @@
             {/if}
         </div>
         <div class="content-main">
-            {#if !$user}
-                <div class="login-prompt">
-                    <div class="prompt-content">
-                        <div class="prompt-icon">🌙</div>
-                        <h2>Welcome, Discerning Dreamer</h2>
-                        <p>Login to discover or share scintillating stories of slumber!</p>
-                        <button class="prompt-login-btn" on:click={() => showLoginModal = true}>
-                            Get Started
-                        </button>
-                    </div>
-                </div>
-            {:else if loading}
+            {#if $authLoading || loading}
                 <div class="loading-state">
                     <div class="loading-spinner"></div>
                     <p>Loading dreams...</p>
@@ -221,10 +242,10 @@
                 <div class="dreams-feed">
                     <div class="feed-header">
                         <h2>Dream Rater</h2>
-                        <p>The dankest dreams. The dankest community.</p>
+                        <p>{tagline}</p>
                     </div>
                     <div class="log-dream-row mobile-only">
-                        <button class="log-dream-btn" on:click={() => showDreamEntryModal = true}>
+                        <button class="log-dream-btn" on:click={requestLogDream}>
                             <span aria-hidden="true">✨</span> Log Dream
                         </button>
                     </div>
@@ -249,7 +270,7 @@
 
 <LoginModal 
     show={showLoginModal} 
-    on:close={() => showLoginModal = false}
+    on:close={handleLoginClose}
     on:submit={handleLoginSuccess}
 />
 
@@ -312,63 +333,6 @@
         overflow: hidden;
     }
 
-    /* Login prompt styles */
-    .login-prompt {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        padding: calc(var(--spacing) * 3);
-    }
-    
-    .prompt-content {
-        text-align: center;
-        max-width: 400px;
-        background: var(--bg-secondary);
-        padding: calc(var(--spacing) * 3);
-        border-radius: var(--rad);
-        border: 1px solid var(--border-color);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-    
-    .prompt-icon {
-        font-size: 4rem;
-        margin-bottom: var(--spacing);
-        opacity: 0.8;
-    }
-    
-    .prompt-content h2 {
-        font-size: var(--x-larger);
-        color: var(--text-primary);
-        margin: 0 0 var(--spacing) 0;
-        font-weight: 600;
-    }
-    
-    .prompt-content p {
-        font-size: var(--larger);
-        color: var(--text-secondary);
-        margin: 0 0 calc(var(--spacing) * 2) 0;
-        line-height: 1.5;
-    }
-    
-    .prompt-login-btn {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        padding: calc(var(--spacing) * 1.5) calc(var(--spacing) * 3);
-        border-radius: var(--rad);
-        font-size: var(--larger);
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
-    }
-    
-    .prompt-login-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-    }
-    
     /* Loading state styles */
     .loading-state {
         display: flex;
@@ -603,10 +567,6 @@
         
         .dreams-list {
             gap: calc(var(--spacing) * 2);
-        }
-        
-        .prompt-content {
-            padding: calc(var(--spacing) * 2);
         }
     }
 </style>
