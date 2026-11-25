@@ -122,6 +122,7 @@
 
 {#if show}
     <div class="modal-overlay" on:click={handleClose} on:keydown={handleKeydown} role="dialog" aria-modal="true" tabindex="-1">
+        <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
         <div class="modal-content" on:click|stopPropagation role="document">
             <div class="modal-header">
                 <h2>Write Your Dream</h2>
@@ -524,6 +525,12 @@
         
         .modal-content {
             max-height: 95vh;
+            max-height: 95dvh;
+        }
+        
+        .remove-tag {
+            width: 24px;
+            height: 24px;
         }
         
         .modal-header {

@@ -101,7 +101,7 @@
     
     <div class="card-footer">
         <button class="view-dream-btn" on:click={viewDream}>
-            View Dream & All Reviews
+            View and Review Dream
         </button>
     </div>
 </div>
@@ -199,6 +199,7 @@
         margin: 0;
         display: -webkit-box;
         -webkit-line-clamp: 4;
+        line-clamp: 4;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
@@ -265,6 +266,11 @@
     @media (max-width: 768px) {
         .dream-feed-card {
             padding: var(--spacing);
+        }
+        
+        .dream-title,
+        .dream-text {
+            overflow-wrap: anywhere;
         }
         
         .dream-meta {

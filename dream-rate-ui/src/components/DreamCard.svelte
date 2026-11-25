@@ -7,11 +7,13 @@
     export let tags: Array<{ color: string; text: string }>;
     export let text: string;
     export let date: string;
+    export let id: number | undefined = undefined;
     
     const dispatch = createEventDispatcher();
     
     function handleClick() {
         dispatch('select', {
+            id,
             title,
             rating,
             tags,
@@ -93,10 +95,11 @@
 
     .dc-text {
         color: var(--text-secondary);
-        line-height: 1;
+        line-height: 1.4;
         font-size: var(--normal);
         display: -webkit-box;
         -webkit-line-clamp: 2;
+        line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;

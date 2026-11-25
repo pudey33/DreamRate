@@ -9,6 +9,7 @@
     /* standard for font sizes */
     --x-smaller: 0.75rem;
     --smaller: 0.85rem;
+    --small: 0.85rem;
     --normal: 1rem;
     --larger: 1.15rem;
     --x-larger: 1.5rem;
@@ -49,6 +50,15 @@ body {
     }
 }
 
+/* Prevent iOS Safari from auto-zooming into form fields */
+@media (max-width: 768px) {
+    input,
+    textarea,
+    select {
+        font-size: 16px !important;
+    }
+}
+
 body {
     display: flex;
     flex-direction: column;
@@ -84,6 +94,7 @@ body {
 .page-container {
     display: flex;
     height: 100vh;
+    height: 100dvh;
     width: 100%;
 }
 
@@ -264,6 +275,7 @@ body {
 .content-main {
     flex: 1;
     height: calc(100vh - 60px); /* Account for header height */
+    height: calc(100dvh - 60px);
     overflow: hidden;
 }
 

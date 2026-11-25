@@ -142,6 +142,7 @@
     .review-content.truncated p {
         display: -webkit-box;
         -webkit-line-clamp: 2;
+        line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
@@ -152,8 +153,13 @@
         }
         
         .additional-ratings {
-            flex-direction: column;
+            flex-direction: row;
+            flex-wrap: wrap;
             gap: calc(var(--spacing) / 2);
+        }
+        
+        .review-content p {
+            overflow-wrap: anywhere;
         }
     }
 </style>

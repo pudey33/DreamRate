@@ -77,10 +77,10 @@
         <div class="rating-categories">
             <!-- Overall Rating (Required) -->
             <div class="rating-category">
-                <label class="rating-label">
+                <div class="rating-label" id="overall-rating-label">
                     Overall Rating <span class="required">*</span>
-                </label>
-                <div class="star-row">
+                </div>
+                <div class="star-row" role="group" aria-labelledby="overall-rating-label">
                     {#each [1, 2, 3, 4, 5] as star}
                         <button
                             class="star-btn"
@@ -99,11 +99,11 @@
             
             <!-- Ethics Rating (Optional) -->
             <div class="rating-category">
-                <label class="rating-label">
+                <div class="rating-label" id="ethics-rating-label">
                     Ethics Rating
                     <span class="optional-hint">(optional)</span>
-                </label>
-                <div class="star-row">
+                </div>
+                <div class="star-row" role="group" aria-labelledby="ethics-rating-label">
                     {#each [1, 2, 3, 4, 5] as star}
                         <button
                             class="star-btn"
@@ -122,11 +122,11 @@
             
             <!-- Creativity Rating (Optional) -->
             <div class="rating-category">
-                <label class="rating-label">
+                <div class="rating-label" id="creativity-rating-label">
                     Creativity Rating
                     <span class="optional-hint">(optional)</span>
-                </label>
-                <div class="star-row">
+                </div>
+                <div class="star-row" role="group" aria-labelledby="creativity-rating-label">
                     {#each [1, 2, 3, 4, 5] as star}
                         <button
                             class="star-btn"
@@ -145,11 +145,11 @@
             
             <!-- Writing Rating (Optional) -->
             <div class="rating-category">
-                <label class="rating-label">
+                <div class="rating-label" id="writing-rating-label">
                     Writing Rating
                     <span class="optional-hint">(optional)</span>
-                </label>
-                <div class="star-row">
+                </div>
+                <div class="star-row" role="group" aria-labelledby="writing-rating-label">
                     {#each [1, 2, 3, 4, 5] as star}
                         <button
                             class="star-btn"
@@ -446,7 +446,14 @@
         }
         
         .star-btn {
-            font-size: var(--larger);
+            font-size: 1.75rem;
+            min-width: 44px;
+            min-height: 44px;
+        }
+        
+        .review-header {
+            flex-direction: column;
+            align-items: flex-start;
         }
     }
 </style>

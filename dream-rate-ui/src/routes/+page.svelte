@@ -13,6 +13,7 @@
     let showDreamEntryModal = false;
     let selectedDream: any = null;
     let sidebarRef: any; // Reference to sidebar component
+    let drawerOpen = false; // Mobile slide-out drawer state
     
     // Toast state
     let showToast = false;
@@ -31,6 +32,7 @@
     }
     
     function handleSidebarShowDreamEntry() {
+        drawerOpen = false;
         showDreamEntryModal = true;
     }
     
@@ -158,15 +160,25 @@
 </script>
 
 <div class="page-container">
-    <Sidebar 
-        bind:this={sidebarRef}
-        user={$user}
-        on:logout={handleSidebarLogout}
-        on:showDreamEntry={handleSidebarShowDreamEntry}
-        on:dreamSelect={handleSidebarDreamSelect}
-    />
+    {#if $user}
+        <Sidebar 
+            bind:this={sidebarRef}
+            user={$user}
+            mobileOpen={drawerOpen}
+            on:close={() => drawerOpen = false}
+            on:logout={() => { drawerOpen = false; handleSidebarLogout(); }}
+            on:showDreamEntry={handleSidebarShowDreamEntry}
+            on:dreamSelect={handleSidebarDreamSelect}
+        />
+    {/if}
     <div class="content">
         <div class="content-header">
+            {#if $user}
+                <button class="menu-btn mobile-only" aria-label="Open menu" on:click={() => drawerOpen = true}>
+                    ☰
+                </button>
+            {/if}
+            <span class="mobile-title mobile-only">Dream Rater</span>
             {#if !$user}
                 <button class="login-btn" on:click={() => showLoginModal = true}>
                     Login
@@ -178,8 +190,8 @@
                 <div class="login-prompt">
                     <div class="prompt-content">
                         <div class="prompt-icon">🌙</div>
-                        <h2>Welcome to DreamRate</h2>
-                        <p>Login to discover amazing dreams from our community!</p>
+                        <h2>Welcome, Discerning Dreamer</h2>
+                        <p>Login to discover or share scintillating stories of slumber!</p>
                         <button class="prompt-login-btn" on:click={() => showLoginModal = true}>
                             Get Started
                         </button>
@@ -211,7 +223,14 @@
                         <h2>Dream Rater</h2>
                         <p>The dankest dreams. The dankest community.</p>
                     </div>
-                    <DreamSearch />
+                    <div class="log-dream-row mobile-only">
+                        <button class="log-dream-btn" on:click={() => showDreamEntryModal = true}>
+                            <span aria-hidden="true">✨</span> Log Dream
+                        </button>
+                    </div>
+                    <div class="desktop-only">
+                        <DreamSearch />
+                    </div>
                     <div class="dreams-list">
                         {#each transformedDreams as item, index}
                             <DreamFeedCard 
@@ -498,23 +517,82 @@
         gap: calc(var(--spacing) * 3);
     }
     
-    .dream-item {
-        background: var(--bg-secondary);
-        border-radius: var(--rad);
-        border: 1px solid var(--border-color);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        transition: all 0.2s ease;
-        overflow: hidden;
-    }
-    
-    .dream-item:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-        border-color: var(--text-secondary);
+    /* Mobile-only controls are hidden on desktop */
+    .mobile-only {
+        display: none;
     }
     
     /* Responsive design */
     @media (max-width: 768px) {
+        .page-container {
+            flex-direction: column;
+        }
+        
+        .content {
+            width: 100%;
+        }
+        
+        .content-header {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            gap: var(--spacing);
+            justify-content: space-between;
+            background: var(--bg-secondary);
+            padding-top: max(var(--spacing), env(safe-area-inset-top));
+            flex-shrink: 0;
+        }
+        
+        .mobile-only.mobile-title {
+            display: block;
+            flex: 1;
+            font-size: var(--larger);
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .desktop-only {
+            display: none;
+        }
+        
+        .log-dream-row.mobile-only {
+            display: flex;
+            justify-content: center;
+            margin-bottom: calc(var(--spacing) * 2);
+        }
+        
+        .log-dream-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: calc(var(--spacing) / 2);
+            min-height: 50px;
+            padding: 0 calc(var(--spacing) * 4);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: var(--rad);
+            font-size: var(--normal);
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+        
+        .menu-btn.mobile-only {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--rad);
+            color: var(--text-primary);
+            font-size: var(--x-larger);
+            line-height: 1;
+            cursor: pointer;
+        }
+        
         .dreams-feed {
             padding: var(--spacing);
         }

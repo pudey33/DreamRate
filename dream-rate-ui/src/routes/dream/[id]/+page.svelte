@@ -8,6 +8,14 @@
     import ReviewCard from '../../../components/ReviewCard.svelte';
     import DreamRating from '../../../components/DreamRating.svelte';
     import Toast from '../../../components/Toast.svelte';
+    import Tag from '../../../components/Tag.svelte';
+    import LoginModal from '../../../components/LoginModal.svelte';
+    
+    let showLoginModal = false;
+    const tagColors = ['#ff6b6b', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#a8e6cf', '#dda0dd', '#98d8c8'];
+    $: tags = dreamData?.tags && Array.isArray(dreamData.tags)
+        ? dreamData.tags.map((text: string, i: number) => ({ text, color: tagColors[i % tagColors.length] }))
+        : [];
     
     let dreamData: any = null;
     let reviews: any[] = [];
@@ -162,6 +170,13 @@
                             </div>
                         {/if}
                     </div>
+                    {#if tags.length > 0}
+                        <div class="dream-tags">
+                            {#each tags as tag}
+                                <Tag color={tag.color} text={tag.text} />
+                            {/each}
+                        </div>
+                    {/if}
                     <div class="dream-content">
                         <p>{dreamData.content}</p>
                     </div>
@@ -189,6 +204,12 @@
                     <div class="already-reviewed">
                         <p>✓ You've already reviewed this dream</p>
                     </div>
+                {:else if !$user}
+                    <div class="rating-section">
+                        <button class="rate-dream-btn" on:click={() => showLoginModal = true}>
+                            Login to Rate This Dream
+                        </button>
+                    </div>
                 {/if}
                 
                 <!-- Reviews Section -->
@@ -211,6 +232,12 @@
         {/if}
     </div>
 </div>
+
+<LoginModal
+    show={showLoginModal}
+    on:close={() => showLoginModal = false}
+    on:submit={() => showLoginModal = false}
+/>
 
 <Toast 
     bind:show={showToast}
@@ -323,6 +350,21 @@
         font-weight: bold;
         color: var(--text-primary);
         margin: 0 0 var(--spacing) 0;
+    }
+    
+    .dream-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: calc(var(--spacing) / 2);
+        margin-bottom: calc(var(--spacing) * 2);
+    }
+    
+    .dream-title {
+        overflow-wrap: anywhere;
+    }
+    
+    .dream-content p {
+        overflow-wrap: anywhere;
     }
     
     .dream-meta {
@@ -438,6 +480,17 @@
     }
     
     @media (max-width: 768px) {
+        .detail-header {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            padding-top: max(var(--spacing), env(safe-area-inset-top));
+        }
+        
+        .back-btn {
+            min-height: 44px;
+        }
+        
         .detail-content {
             padding: var(--spacing);
         }

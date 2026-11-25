@@ -1,13 +1,25 @@
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
+    import { goto } from '$app/navigation';
     import DreamCard from './DreamCard.svelte';
+    import DreamSearch from './DreamSearch.svelte';
     import { getUserDreams } from '../lib/supabase/queries';
     import type { Dream } from '../lib/supabase/types';
     import type { User } from '@supabase/supabase-js';
     
     export let user: User | null = null;
+    export let mobileOpen = false; // Only affects layouts <= 768px
     
     const dispatch = createEventDispatcher();
+    
+    function closeDrawer() {
+        showProfilePopup = false;
+        dispatch('close');
+    }
+    
+    function handleWindowKeydown(event: KeyboardEvent) {
+        if (event.key === 'Escape' && mobileOpen) closeDrawer();
+    }
     
     // State for profile popup
     let showProfilePopup = false;
@@ -96,6 +108,10 @@
     
     function handleDreamSelect(event: any) {
         dispatch('dreamSelect', event.detail);
+        if (event.detail?.id) {
+            closeDrawer();
+            goto(`/dream/${event.detail.id}`);
+        }
     }
     
     // Public method to refresh user dreams (called after creating new dream)
@@ -104,7 +120,13 @@
     }
 </script>
 
-<div class="sidebar">
+<svelte:window on:keydown={handleWindowKeydown} />
+
+<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+<div class="drawer-backdrop" class:open={mobileOpen} on:click={closeDrawer}></div>
+
+<div class="sidebar" class:open={mobileOpen}>
+    <button class="drawer-close" aria-label="Close menu" on:click={closeDrawer}>×</button>
     {#if user}
         <div class="sb-welcome">
             <div class="welcome-message">
@@ -117,8 +139,12 @@
         {#if user}
             <button class="share-dream-btn" on:click={handleShowDreamEntry}>
                 <span class="btn-icon">✨</span>
-                Write Your Dream
+                Log Dream
             </button>
+            <!-- Search lives in the drawer on mobile only (desktop keeps it in the feed) -->
+            <div class="drawer-search">
+                <DreamSearch enterOnly={true} on:select={closeDrawer} />
+            </div>
         {:else}
             <div class="sb-searchbar">
                 <input id="query" type="text" placeholder="Login to share dreams" class="text" size="1" disabled />
@@ -148,12 +174,13 @@
                 <div class="empty-state">
                     <div class="empty-icon">💭</div>
                     <p>You haven't created any dreams yet.</p>
-                    <p class="empty-hint">Click "Share Your Dream" to get started!</p>
+                    <p class="empty-hint">Click "Log Dream" to get started!</p>
                 </div>
             {:else}
                 <div class="dream-cards">
                     {#each transformedUserDreams as dream}
                         <DreamCard 
+                            id={dream.id}
                             title={dream.title} 
                             date={dream.date} 
                             rating={dream.rating} 
@@ -493,16 +520,73 @@
     }
     
     /* Responsive design */
+    .drawer-backdrop,
+    .drawer-close,
+    .drawer-search {
+        display: none;
+    }
+    
     @media (max-width: 768px) {
-        .sidebar {
-            width: 100%;
-            height: auto;
-            border-right: none;
-            border-bottom: 1px solid var(--border-color);
+        .drawer-search {
+            display: block;
+            margin: 0 var(--spacing) var(--spacing);
         }
         
-        .sb-list {
-            max-height: 300px;
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: min(85vw, 360px);
+            height: 100vh;
+            height: 100dvh;
+            z-index: 950;
+            transform: translateX(-100%);
+            transition: transform 0.25s ease;
+            visibility: hidden;
+            box-shadow: none;
+        }
+        
+        .sidebar.open {
+            transform: translateX(0);
+            visibility: visible;
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+        }
+        
+        .drawer-backdrop {
+            display: block;
+            position: fixed;
+            inset: 0;
+            z-index: 940;
+            background: rgba(0, 0, 0, 0.6);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        
+        .drawer-backdrop.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .drawer-close {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            align-self: flex-end;
+            width: 44px;
+            height: 44px;
+            margin: var(--spacing) var(--spacing) 0 0;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: var(--xx-larger);
+            line-height: 1;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        
+        .sb-footer {
+            padding-bottom: calc(var(--spacing) + env(safe-area-inset-bottom));
         }
     }
 </style>
