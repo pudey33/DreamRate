@@ -1,7 +1,16 @@
-import { writable } from 'svelte/store'
+import { writable, derived } from 'svelte/store'
 import { supabase } from './supabase/client.js'
 import type { User, Session } from '@supabase/supabase-js'
 import { PUBLIC_AUTH_METHOD } from '$app/env/public'
+
+export type PermissionLevel = 'guest' | 'user'
+
+export interface Permissions {
+  level: PermissionLevel
+  canViewDreams: boolean
+  canRateDreams: boolean
+  canCreateDreams: boolean
+}
 
 // Auth configuration
 export const authConfig = {
@@ -14,6 +23,22 @@ export const authConfig = {
 export const user = writable<User | null>(null)
 export const session = writable<Session | null>(null)
 export const loading = writable(true)
+
+// Permission stores
+export const permissionLevel = derived<typeof user, PermissionLevel>(
+  user,
+  ($user) => ($user ? 'user' : 'guest')
+)
+
+export const permissions = derived<typeof permissionLevel, Permissions>(
+  permissionLevel,
+  ($level) => ({
+    level: $level,
+    canViewDreams: true,
+    canRateDreams: $level === 'user',
+    canCreateDreams: $level === 'user'
+  })
+)
 
 // Initialize auth state
 supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
